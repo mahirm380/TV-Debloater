@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.GradientDrawable;
 import android.media.tv.TvInputManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -38,6 +39,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -62,14 +64,18 @@ public final class Home extends Activity {
     private ImageView wall;
     private View shade;
     private View tint;
-    private TextView clock, date;
+    private View heroSpace;
+    private TextView clock, date, greeting, weatherTemp, weatherDetail;
     private Row apps, inputs;
     private Tile moving;
     private String wallKey;
     private String backgroundMode;
     private ValueAnimator colorAnimation;
+    private ValueAnimator wallpaperAnimation;
     private int displayedColor, targetColor;
     private boolean tintWallpaper;
+    private boolean weatherLoading;
+    private long weatherLastAttempt;
 
     private final BroadcastReceiver packages = new BroadcastReceiver() {
         @Override
@@ -110,57 +116,85 @@ public final class Home extends Activity {
 
     private final class Row {
         final String kind;
-        final TextView title;
+        final TextView focusName;
+        final FrameLayout panel;
         final HorizontalScrollView scroll;
         final LinearLayout strip;
-        final Grid grid;
+        int tileWidth;
+        int tileGap;
+        int visibleTiles = 1;
         List<Item> all = new ArrayList<>();
 
-        Row(String kind, String name, LinearLayout parent) {
+        Row(String kind, LinearLayout parent) {
             this.kind = kind;
-            int edge = dp(56), bleed = dp(14);
-            title = Ui.text(Home.this, 12, Ui.FAINT, Ui.MEDIUM);
-            title.setText(name.toUpperCase(Locale.ROOT));
-            title.setLetterSpacing(0.14f);
-            title.setPadding(edge, dp(20), edge, dp(2));
+            boolean appRow = Catalog.APPS.equals(kind);
+            int edge = dp(108), inset = dp(14);
+            focusName = Ui.text(Home.this, 17, Ui.TEXT, Ui.MEDIUM);
+            focusName.setSingleLine(true);
+            focusName.setVisibility(appRow ? View.VISIBLE : View.GONE);
+            if (appRow) {
+                LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(MATCH, dp(28));
+                nameLp.leftMargin = edge + dp(20);
+                nameLp.rightMargin = edge;
+                parent.addView(focusName, nameLp);
+            }
             strip = new LinearLayout(Home.this);
             strip.setClipChildren(false);
             strip.setClipToPadding(false);
-            strip.setPadding(bleed, dp(12), bleed, dp(8));
+            strip.setGravity(Gravity.CENTER_HORIZONTAL);
+            strip.setMinimumWidth(getResources().getDisplayMetrics().widthPixels - 2 * edge);
+            strip.setPadding(inset, appRow ? dp(8) : dp(5), inset, appRow ? dp(8) : dp(5));
             scroll = new HorizontalScrollView(Home.this) {
-                /** Keeps the focused tile centered, except near either end of the row. */
+                /** Moves only in complete tile-width steps, so neither edge shows a clipped card. */
                 @Override
                 protected int computeScrollDeltaToGetChildRectOnScreen(Rect r) {
-                    if (getChildCount() == 0) return 0;
-                    int range = Math.max(0, getChildAt(0).getWidth() - (getWidth() - getPaddingLeft() - getPaddingRight()));
-                    int target = Math.max(0, Math.min(range, r.centerX() - getWidth() / 2));
-                    return target - getScrollX();
+                    View focused = getCurrentFocus();
+                    if (focused == null || focused.getParent() != strip || tileWidth <= 0) return 0;
+                    int index = strip.indexOfChild(focused);
+                    int left = focused.getLeft();
+                    int right = focused.getRight();
+                    int current = getScrollX();
+                    int viewport = getWidth();
+                    if (left >= current && right <= current + viewport) return 0;
+                    int first = right > current + viewport
+                            ? index - visibleTiles + 1 : index;
+                    first = Math.max(0, Math.min(first,
+                            Math.max(0, strip.getChildCount() - visibleTiles)));
+                    int range = Math.max(0, strip.getWidth() - viewport);
+                    int target = Math.max(0, Math.min(range, first * (tileWidth + tileGap)));
+                    return target - current;
                 }
             };
             scroll.setFocusable(false);
             scroll.setHorizontalScrollBarEnabled(false);
             scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
-            scroll.setClipChildren(false);
-            scroll.setClipToPadding(false);
-            scroll.setPadding(edge - bleed, 0, edge - bleed, 0);
+            scroll.setClipChildren(true);
+            scroll.setClipToPadding(true);
+            scroll.setPadding(0, 0, 0, 0);
             scroll.addView(strip, new FrameLayout.LayoutParams(WRAP, WRAP));
-            grid = new Grid(Home.this);
-            grid.setPadding(edge, dp(12), edge, dp(8));
-            parent.addView(title, new LinearLayout.LayoutParams(MATCH, WRAP));
-            parent.addView(scroll, new LinearLayout.LayoutParams(MATCH, WRAP));
-            parent.addView(grid, new LinearLayout.LayoutParams(MATCH, WRAP));
+
+            panel = new FrameLayout(Home.this);
+            // The insets leave room for the focus scale, so clipping here keeps the next card
+            // inside the glass instead of drawing through its rounded edge.
+            panel.setClipChildren(true);
+            panel.setClipToPadding(true);
+            panel.setBackground(Ui.glass(Home.this));
+            panel.addView(scroll, new FrameLayout.LayoutParams(MATCH, WRAP));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(MATCH, WRAP);
+            lp.leftMargin = edge;
+            lp.rightMargin = edge;
+            lp.bottomMargin = appRow ? dp(8) : 0;
+            parent.addView(panel, lp);
         }
 
-        /** Whichever container currently holds the tiles, following Options › Layout. */
         ViewGroup tiles() {
-            return "grid".equals(cfg.get(Config.LAYOUT)) ? grid : strip;
+            return strip;
         }
 
         void setVisible(boolean on) {
-            boolean gridMode = "grid".equals(cfg.get(Config.LAYOUT));
-            title.setVisibility(on ? View.VISIBLE : View.GONE);
-            scroll.setVisibility(on && !gridMode ? View.VISIBLE : View.GONE);
-            grid.setVisibility(on && gridMode ? View.VISIBLE : View.GONE);
+            panel.setVisibility(on ? View.VISIBLE : View.GONE);
+            scroll.setVisibility(on ? View.VISIBLE : View.GONE);
+            if (Catalog.APPS.equals(kind)) focusName.setVisibility(on ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -201,7 +235,7 @@ public final class Home extends Activity {
             loadApps(null);
             return;
         }
-        int fit = getResources().getDisplayMetrics().widthPixels / (cardSize()[0] + dp(18)) + 1;
+        int fit = getResources().getDisplayMetrics().widthPixels / (cardSize(true)[0] + dp(18)) + 1;
         for (Item it : Catalog.visible(cfg, Catalog.APPS, apps.all)) {
             if (fit-- <= 0) break;
             Catalog.art(getPackageManager(), it);
@@ -216,13 +250,17 @@ public final class Home extends Activity {
         Guard.arrived(this);
         cfg.refresh();
         cfg.visited();
-        if (cfg.version() != applied) apply();
+        if (cfg.version() != applied) {
+            weatherLastAttempt = 0;
+            apply();
+        }
         else background();
         IntentFilter f = new IntentFilter(Intent.ACTION_TIME_TICK);
         f.addAction(Intent.ACTION_TIME_CHANGED);
         f.addAction(Intent.ACTION_TIMEZONE_CHANGED);
         registerReceiver(time, f);
         tick();
+        weather();
     }
 
     @Override
@@ -235,6 +273,7 @@ public final class Home extends Activity {
         super.onPause();
         resumed = false;
         stopColorAnimation();
+        stopWallpaperAnimation();
         targetColor = 0;
         unregisterReceiver(time);
         if (moving != null) stopMoving();
@@ -291,11 +330,6 @@ public final class Home extends Activity {
                     break;
                 case KeyEvent.KEYCODE_DPAD_UP:
                 case KeyEvent.KEYCODE_DPAD_DOWN:
-                    // In a grid, up and down move the tile a whole line; a strip has no lines.
-                    if (moving.getParent() instanceof Grid) {
-                        int cols = ((Grid) moving.getParent()).columns();
-                        shift(e.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP ? -cols : cols);
-                    }
                     break;
                 default:
                     stopMoving();
@@ -331,25 +365,13 @@ public final class Home extends Activity {
         return Math.max(0, Math.min(range, stopFor(at, rows, page.getHeight())));
     }
 
-    /**
-     * Title top and strip bottom of each visible row, in {@code content}'s coordinates. In grid
-     * mode every line of tiles is its own block (the first one starting at the row title), so
-     * a grid taller than the screen still scrolls a whole line at a time.
-     */
+    /** Panel top and bottom of each visible dock, in {@code content}'s coordinates. */
     private List<int[]> rowBlocks(View content) {
         List<int[]> rows = new ArrayList<>();
         for (Row row : new Row[] {apps, inputs}) {
             if (row.scroll.getVisibility() == View.VISIBLE) {
-                rows.add(new int[] {topIn(row.title, content), topIn(row.scroll, content) + row.scroll.getHeight()});
-            } else if (row.grid.getVisibility() == View.VISIBLE) {
-                int gridTop = topIn(row.grid, content), lastTop = Integer.MIN_VALUE;
-                for (int i = 0; i < row.grid.getChildCount(); i++) {
-                    View t = row.grid.getChildAt(i);
-                    if (t.getTop() == lastTop) continue;
-                    int start = lastTop == Integer.MIN_VALUE ? topIn(row.title, content) : gridTop + t.getTop() - dp(12);
-                    lastTop = t.getTop();
-                    rows.add(new int[] {start, gridTop + t.getBottom() + dp(8)});
-                }
+                rows.add(new int[] {topIn(row.panel, content),
+                        topIn(row.panel, content) + row.panel.getHeight()});
             }
         }
         return rows;
@@ -456,32 +478,63 @@ public final class Home extends Activity {
         column.setOrientation(LinearLayout.VERTICAL);
         column.setClipChildren(false);
         column.setClipToPadding(false);
-        column.setPadding(0, dp(40), 0, dp(32));
+        column.setPadding(0, dp(24), 0, dp(8));
         scroll.addView(column, new FrameLayout.LayoutParams(MATCH, WRAP));
 
-        LinearLayout head = new LinearLayout(this);
-        head.setGravity(Gravity.TOP);
-        head.setPadding(dp(56), 0, dp(56), dp(12));
+        FrameLayout head = new FrameLayout(this);
+        head.setClipChildren(false);
+        head.setClipToPadding(false);
+        head.setPadding(dp(56), 0, dp(64), 0);
+
         LinearLayout when = new LinearLayout(this);
         when.setOrientation(LinearLayout.VERTICAL);
-        clock = Ui.text(this, 52, Ui.TEXT, Ui.LIGHT);
-        date = Ui.text(this, 15, Ui.MUTED, Ui.MEDIUM);
-        date.setPadding(dp(2), dp(8), 0, 0);
+        clock = Ui.text(this, 44, Ui.TEXT, Ui.LIGHT);
         when.addView(clock);
-        when.addView(date);
-        head.addView(when, new LinearLayout.LayoutParams(0, WRAP, 1f));
-        head.addView(chip("Options", v -> startActivity(new Intent(this, Options.class))));
-        head.addView(chip("Settings", v -> openSettings()));
-        column.addView(head, new LinearLayout.LayoutParams(MATCH, WRAP));
 
-        apps = new Row(Catalog.APPS, "Apps", column);
-        inputs = new Row(Catalog.INPUTS, "Inputs", column);
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.HORIZONTAL);
+        details.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        details.setPadding(dp(1), dp(6), 0, 0);
+        date = Ui.text(this, 13, Ui.MUTED, Ui.MEDIUM);
+        weatherTemp = Ui.text(this, 13, Ui.TEXT, Ui.MEDIUM);
+        weatherTemp.setText(" · --°");
+        weatherDetail = Ui.text(this, 13, Ui.MUTED, Ui.MEDIUM);
+        weatherDetail.setText(" " + Weather.place(cfg));
+        details.addView(date);
+        details.addView(weatherTemp);
+        details.addView(weatherDetail);
+        when.addView(details);
+        FrameLayout.LayoutParams whenParams = new FrameLayout.LayoutParams(dp(390), WRAP,
+                Gravity.LEFT | Gravity.TOP);
+        head.addView(when, whenParams);
+
+        greeting = Ui.text(this, 18, Ui.TEXT, Ui.MEDIUM);
+        greeting.setGravity(Gravity.LEFT);
+        greeting.setPadding(dp(1), dp(9), 0, 0);
+        when.addView(greeting);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setClipChildren(false);
+        actions.setClipToPadding(false);
+        actions.setGravity(Gravity.RIGHT | Gravity.TOP);
+        actions.addView(chip("Options", v -> startActivity(new Intent(this, Options.class))));
+        actions.addView(chip("Settings", v -> openSettings()));
+        FrameLayout.LayoutParams actionParams = new FrameLayout.LayoutParams(WRAP, WRAP,
+                Gravity.RIGHT | Gravity.TOP);
+        actionParams.rightMargin = dp(8);
+        head.addView(actions, actionParams);
+        column.addView(head, new LinearLayout.LayoutParams(MATCH, dp(122)));
+
+        heroSpace = new View(this);
+        column.addView(heroSpace, new LinearLayout.LayoutParams(MATCH, dp(201)));
+        apps = new Row(Catalog.APPS, column);
+        inputs = new Row(Catalog.INPUTS, column);
         return root;
     }
 
     /**
      * The child of {@code strip} horizontally closest to {@code from}, restricted to its top
-     * visual row so a wrapped grid does not match a tile several rows further down.
+     * visual row so focus remains aligned with the compact dock.
      */
     private static View nearest(ViewGroup strip, View from) {
         int n = strip.getChildCount();
@@ -534,7 +587,9 @@ public final class Home extends Activity {
     private void apply() {
         applied = cfg.version();
         int accent = cfg.accent();
-        for (TextView c : chips) Ui.focusStyle(c, accent, 0x14FFFFFF, dp(18));
+        for (TextView c : chips) Ui.focusStyle(c, accent, 0x20FFFFFF, dp(20));
+        heroSpace.getLayoutParams().height = dp(201);
+        heroSpace.requestLayout();
         render(apps);
         render(inputs);
         background();
@@ -574,35 +629,40 @@ public final class Home extends Activity {
         View focused = getCurrentFocus();
         String keep = focused instanceof Tile && ((Tile) focused).kind.equals(row.kind)
                 ? ((Tile) focused).item.id : null;
-        boolean gridMode = "grid".equals(cfg.get(Config.LAYOUT));
-        ViewGroup target = gridMode ? row.grid : row.strip;
+        ViewGroup target = row.strip;
         row.strip.removeAllViews();
-        row.grid.removeAllViews();
 
         boolean enabled = !Catalog.INPUTS.equals(row.kind) || "on".equals(cfg.get(Config.INPUTS));
         List<Item> shown = enabled ? Catalog.visible(cfg, row.kind, row.all) : new ArrayList<>();
-        int[] size = cardSize();
-        int w = size[0], h = Catalog.APPS.equals(row.kind) ? size[1] : Math.round(size[1] * 0.56f);
-        String labels = cfg.get(Config.LABELS);
+        boolean appRow = Catalog.APPS.equals(row.kind);
+        int[] size = cardSize(appRow);
+        int w = size[0], h = size[1];
+        int gap = rowGap(w);
+        row.tileWidth = w;
+        row.tileGap = gap;
+        row.visibleTiles = rowVisibleTiles(w, gap);
         int accent = cfg.accent();
         int index = 0, restore = -1;
         for (Item it : shown) {
-            Tile t = new Tile(this, it, row.kind, Catalog.label(cfg, it), w, h, labels, accent);
+            CharSequence label = Catalog.label(cfg, it);
+            Tile t = new Tile(this, it, row.kind, label, w, h, accent);
             t.setOnClickListener(v -> open((Tile) v));
             t.setOnFocusChangeListener((v, has) -> {
-                if (has) focusBackground(((Tile) v).item);
+                Tile tile = (Tile) v;
+                if (has) {
+                    focusBackground(tile.item);
+                    if (Catalog.APPS.equals(tile.kind)) apps.focusName.setText(label);
+                } else if (Catalog.APPS.equals(tile.kind)) {
+                    apps.focusName.setText("");
+                }
             });
             t.setOnLongClickListener(v -> {
                 menu((Tile) v);
                 return true;
             });
-            if (gridMode) {
-                target.addView(t, new ViewGroup.LayoutParams(WRAP, WRAP));
-            } else {
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(WRAP, WRAP);
-                lp.rightMargin = dp(18);
-                target.addView(t, lp);
-            }
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(WRAP, WRAP);
+            if (index < shown.size() - 1) lp.rightMargin = gap;
+            target.addView(t, lp);
             if (it.id.equals(keep)) restore = index;
             index++;
             if (Catalog.APPS.equals(row.kind) && !it.artRequested) loadArt(it);
@@ -677,15 +737,32 @@ public final class Home extends Activity {
         }
     }
 
-    private int[] cardSize() {
+    private int[] cardSize(boolean appRow) {
+        if (!appRow) return new int[] {dp(120), dp(44)};
         switch (cfg.get(Config.TILES)) {
             case "small":
-                return new int[] {dp(144), dp(81)};
+                return new int[] {dp(92), dp(52)};
             case "large":
-                return new int[] {dp(224), dp(126)};
+                return new int[] {dp(104), dp(59)};
             default:
-                return new int[] {dp(180), dp(101)};
+                return new int[] {dp(98), dp(55)};
         }
+    }
+
+    /** Spaces a whole number of row cards across the dock, leaving no clipped next card. */
+    private int rowGap(int cardWidth) {
+        int inner = rowInnerWidth();
+        int minimum = dp(18);
+        int cards = Math.max(1, (inner + minimum) / (cardWidth + minimum));
+        return cards <= 1 ? minimum : Math.max(minimum, (inner - cards * cardWidth) / (cards - 1));
+    }
+
+    private int rowVisibleTiles(int cardWidth, int gap) {
+        return Math.max(1, (rowInnerWidth() + gap) / (cardWidth + gap));
+    }
+
+    private int rowInnerWidth() {
+        return getResources().getDisplayMetrics().widthPixels - 2 * dp(108) - 2 * dp(14);
     }
 
     private void focusFirst() {
@@ -699,28 +776,72 @@ public final class Home extends Activity {
     }
 
     private void tick() {
-        String mode = cfg.get(Config.CLOCK);
-        boolean h24 = "24h".equals(mode) || "auto".equals(mode) && DateFormat.is24HourFormat(this);
         Date now = new Date();
-        if (h24) {
-            clock.setText(DateFormat.format("HH:mm", now));
-        } else {
-            SpannableString half = new SpannableString(" " + DateFormat.format("a", now));
-            half.setSpan(new RelativeSizeSpan(0.36f), 0, half.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            clock.setText(DateFormat.format("h:mm", now));
-            clock.append(half);
-        }
+        String marker = DateFormat.format("a", now).toString().toLowerCase(Locale.getDefault());
+        SpannableString half = new SpannableString(" " + marker);
+        half.setSpan(new RelativeSizeSpan(0.36f), 0, half.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        clock.setText(DateFormat.format("h:mm", now));
+        clock.append(half);
         Locale locale = Locale.getDefault();
         date.setText(DateFormat.format(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), now));
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        greeting.setText(hour < 5 ? "Good night" : hour < 12 ? "Good morning"
+                : hour < 18 ? "Good afternoon" : hour < 22 ? "Good evening" : "Good night");
+        weather();
         // hourly and time-of-day rotations change while the screen stays open; a no-op otherwise
         background();
+    }
+
+    private void weather() {
+        if ("off".equals(cfg.get("weather", "on"))) {
+            weatherTemp.setVisibility(View.GONE);
+            weatherDetail.setVisibility(View.GONE);
+            return;
+        }
+        weatherTemp.setVisibility(View.VISIBLE);
+        weatherDetail.setVisibility(View.VISIBLE);
+        Weather.Reading cached = Weather.cached(this, cfg);
+        if (cached != null) showWeather(cached);
+        long now = System.currentTimeMillis();
+        if (weatherLoading || cached != null && now - cached.time < Weather.REFRESH_MS
+                || now - weatherLastAttempt < 5 * 60 * 1000L) return;
+        weatherLoading = true;
+        weatherLastAttempt = now;
+        io.execute(() -> {
+            Weather.Reading fresh = null;
+            try {
+                fresh = Weather.fetch(cfg);
+                Weather.save(this, cfg, fresh);
+            } catch (java.io.IOException ignored) {
+                // Keep the last reading when the TV or weather service is temporarily offline.
+            }
+            Weather.Reading result = fresh;
+            ui.post(() -> {
+                weatherLoading = false;
+                if (isDestroyed()) return;
+                if (result != null) showWeather(result);
+                else if (Weather.cached(this, cfg) == null) {
+                    weatherDetail.setText(" " + Weather.place(cfg) + " · unavailable");
+                }
+            });
+        });
+    }
+
+    private void showWeather(Weather.Reading reading) {
+        weatherTemp.setText(" · " + Math.round(reading.temperature) + Weather.unitSymbol(cfg));
+        weatherDetail.setText(" " + Weather.place(cfg) + " · " + reading.condition());
     }
 
     private void background() {
         String mode = cfg.get(Config.BACKGROUND);
         boolean image = "image".equals(mode) || "adaptive-tint".equals(mode);
-        File file = image ? cfg.wallpaper() : null;
-        tintWallpaper = "adaptive-tint".equals(mode) && file != null;
+        String selected = cfg.get(Config.WALLPAPER);
+        boolean custom = "custom".equals(selected);
+        File file = image && custom ? cfg.wallpaper() : null;
+        boolean builtIn = image && (!custom || file == null);
+        if (builtIn && custom) selected = "aurora";
+        boolean hasWallpaper = file != null || builtIn;
+        tintWallpaper = "adaptive-tint".equals(mode) && hasWallpaper;
         if ("adaptive".equals(mode)) {
             if (!mode.equals(backgroundMode)) {
                 stopColorAnimation();
@@ -732,8 +853,8 @@ public final class Home extends Activity {
             backgroundMode = mode;
             focusBackground(focusedItem());
         } else if ("adaptive-tint".equals(mode)) {
-            root.setBackgroundColor(file == null ? cfg.background() : Color.BLACK);
-            if (!mode.equals(backgroundMode) || file == null) {
+            root.setBackgroundColor(hasWallpaper ? Color.BLACK : cfg.background());
+            if (!mode.equals(backgroundMode) || !hasWallpaper) {
                 stopColorAnimation();
                 targetColor = 0;
                 tint.setBackgroundColor(Color.TRANSPARENT);
@@ -748,11 +869,34 @@ public final class Home extends Activity {
             tint.setBackgroundColor(Color.TRANSPARENT);
             root.setBackgroundColor(cfg.background());
         }
+        setWallpaperMotion(hasWallpaper && "live".equals(cfg.get(Config.MOTION)));
         int dim = Integer.parseInt(cfg.get(Config.DIM));
-        shade.setBackgroundColor(file == null ? Color.TRANSPARENT : Color.argb(dim * 255 / 100, 0, 0, 0));
-        String key = file == null ? null : file.getPath() + ":" + file.lastModified();
+        if (hasWallpaper) {
+            int alpha = dim * 255 / 100;
+            shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[] {Color.argb(alpha / 2, 0, 0, 0), Color.argb(alpha, 0, 0, 0),
+                            Color.argb(Math.min(255, alpha + 46), 0, 0, 0)}));
+        } else {
+            shade.setBackgroundColor(Color.TRANSPARENT);
+        }
+        String key = builtIn ? "resource:" + selected
+                : file == null ? null : file.getPath() + ":" + file.lastModified();
         if (key == null ? wallKey == null : key.equals(wallKey)) return;
         wallKey = key;
+        if (builtIn) {
+            switch (selected) {
+                case "alpine":
+                    wall.setImageResource(R.drawable.alpine_aurora);
+                    break;
+                case "coast":
+                    wall.setImageResource(R.drawable.golden_coast);
+                    break;
+                default:
+                    wall.setImageResource(R.drawable.cinematic_night);
+                    break;
+            }
+            return;
+        }
         if (file == null) {
             wall.setImageDrawable(null);
             return;
@@ -764,6 +908,42 @@ public final class Home extends Activity {
                 if (key.equals(wallKey)) wall.setImageBitmap(b);
             });
         });
+    }
+
+    /** A restrained Ken Burns movement makes a still wallpaper feel live without distracting. */
+    private void setWallpaperMotion(boolean live) {
+        if (!live || Settings.Global.getFloat(getContentResolver(),
+                "animator_duration_scale", 1f) == 0f) {
+            stopWallpaperAnimation();
+            return;
+        }
+        if (wallpaperAnimation != null) return;
+        wallpaperAnimation = ValueAnimator.ofFloat(0f, 1f);
+        wallpaperAnimation.setDuration(24000);
+        wallpaperAnimation.setRepeatCount(ValueAnimator.INFINITE);
+        wallpaperAnimation.setRepeatMode(ValueAnimator.REVERSE);
+        wallpaperAnimation.addUpdateListener(a -> {
+            float p = (Float) a.getAnimatedValue();
+            float scale = 1.045f + 0.035f * p;
+            wall.setScaleX(scale);
+            wall.setScaleY(scale);
+            wall.setTranslationX(dp(10) * (p - 0.5f));
+            wall.setTranslationY(dp(5) * (0.5f - p));
+        });
+        wallpaperAnimation.start();
+    }
+
+    private void stopWallpaperAnimation() {
+        if (wallpaperAnimation != null) {
+            wallpaperAnimation.cancel();
+            wallpaperAnimation = null;
+        }
+        if (wall != null) {
+            wall.setScaleX(1f);
+            wall.setScaleY(1f);
+            wall.setTranslationX(0f);
+            wall.setTranslationY(0f);
+        }
     }
 
     private static Bitmap decode(File f, int w, int h) {
@@ -791,7 +971,14 @@ public final class Home extends Activity {
 
     private void open(Tile t) {
         if (Catalog.APPS.equals(t.kind)) {
-            launch(new Intent(t.item.intent), t.item.id);
+            Intent app = new Intent(t.item.intent);
+            // Use Fire TV's dedicated Appstore activity instead of the newer launcher-embedded
+            // grid. It offers the same catalogue while allowing HOME to return here normally.
+            if ("com.amazon.venezia".equals(t.item.id)) {
+                app = new Intent("com.amazon.venezia.ade.FEATURED_LAUNCH")
+                        .setPackage("com.amazon.venezia");
+            }
+            launch(app, t.item.id);
             return;
         }
         Intent own = Input.intent(this, cfg, t.item, Catalog.label(cfg, t.item));

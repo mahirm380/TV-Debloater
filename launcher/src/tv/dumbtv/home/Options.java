@@ -48,7 +48,7 @@ public final class Options extends Activity {
         list.addView(title);
 
         for (Config.Choice c : Config.CHOICES) list.addView(choice(c));
-        list.addView(action("Next wallpaper", () -> {
+        list.addView(action("Next custom photo", () -> {
             cfg.nextWallpaper();
             refresh();
         }));
@@ -56,20 +56,22 @@ public final class Options extends Activity {
         list.addView(action("Apps on home screen", () -> pick(Catalog.APPS)));
         list.addView(action("Inputs on home screen", () -> pick(Catalog.INPUTS)));
         list.addView(action("Reset order, names and hidden tiles", this::reset));
-        list.addView(action("Open Amazon's home screen", () -> {
-            Guard.amazon(this);
-            finish();
-        }));
+        if (getPackageManager().getLaunchIntentForPackage(Guard.AMAZON) != null) {
+            list.addView(action("Open Amazon's home screen", () -> {
+                Guard.amazon(this);
+                finish();
+            }));
+        }
 
         TextView about = Ui.text(this, 13, Ui.FAINT, Ui.MEDIUM);
         about.setLineSpacing(0, 1.4f);
         about.setPadding(dp(16), dp(28), 0, 0);
-        about.setText("Settings file: " + cfg.dir + "/" + Config.FILE
-                + "\nOne wallpaper: name it exactly wallpaper.jpg (or .png) and put it in that folder"
-                + "\nSeveral wallpapers: put them in " + Config.WALLPAPERS + "/ with any names, and pick a rotation"
-                + "\nThen pick Background › Image file or Adaptive wallpaper tint. No permission is needed"
-                + "\nAdaptive wallpaper tint shows graphite until you add a wallpaper"
-                + "\nNo internet permission. No tracking, no ads, no accounts.");
+        about.setText("Choose one of the built-in scenes under Wallpaper, then set Wallpaper motion to Still or Live slow pan."
+                + "\nFor your own photo: name it wallpaper.jpg (or .png) and put it in " + cfg.dir
+                + "\nFor several photos: put them in " + Config.WALLPAPERS + "/ and choose a rotation"
+                + "\nThen select Wallpaper › My photos. No permission is needed"
+                + "\nNetwork access is used only for the weather readout. No tracking, ads or accounts."
+                + "\nWeather location and optional remote-button shortcuts can be set with launcher/configure.sh.");
         list.addView(about);
 
         setContentView(scroll);
@@ -114,9 +116,12 @@ public final class Options extends Activity {
                 value.setText(focused ? "‹  " + text + "  ›" : text);
             }
             value.setTextColor(focused ? Ui.TEXT : Ui.MUTED);
-            boolean off = (c == Config.DIM || c == Config.ROTATE)
-                    && !"image".equals(cfg.get(Config.BACKGROUND))
-                    && !"adaptive-tint".equals(cfg.get(Config.BACKGROUND))
+            boolean image = "image".equals(cfg.get(Config.BACKGROUND))
+                    || "adaptive-tint".equals(cfg.get(Config.BACKGROUND));
+            boolean off = (c == Config.WALLPAPER || c == Config.MOTION || c == Config.DIM)
+                    && !image
+                    || c == Config.ROTATE
+                    && (!image || !"custom".equals(cfg.get(Config.WALLPAPER)))
                     || c == Config.SWITCH && "off".equals(cfg.get(Config.INPUTS));
             row.setAlpha(off ? 0.4f : 1f);
         };

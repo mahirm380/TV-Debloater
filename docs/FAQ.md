@@ -27,10 +27,12 @@ network rules, puts back the settings your TV had before (saved by
 asked to have uninstalled come back from the Appstore.
 
 **Does the project itself phone home?**
-No. On your computer the scripts download the personalDNSfilter app from F-Droid,
-dumbtv home from this repository's releases (checked against a pinned SHA-256),
-and the HaGeZi tracker list; SmartTube too, if you ask for it. Nothing is
-uploaded. The launcher has no internet permission.
+Only the optional weather readout: the launcher asks Open-Meteo for the configured
+location's current temperature and conditions. On your computer the scripts
+download the personalDNSfilter app from F-Droid, dumbtv home from this repository's
+releases (checked against a pinned SHA-256), and the HaGeZi tracker list; SmartTube
+too, if you ask for it. Nothing is uploaded. This customised launcher contacts
+Open-Meteo only for the configured weather readout.
 
 ## Your apps
 
@@ -105,16 +107,16 @@ the rest of the cleanup: the packages, the settings and the home screen.
 ## The project
 
 **Why its own launcher?**
-A home screen needs no internet access, no advertising ID and no permission to
-install apps. dumbtv home is 54 KB, open source and asks for no permissions on
-Fire OS 7 and 8. Check it yourself: `aapt2 dump permissions dumbtv-home.apk`
-lists three, each limited to Android 8.1 and earlier, which only Fire OS 6's Keeper
-uses.
+A home screen needs no advertising ID and no permission to install apps. This
+customised dumbtv home is open source and asks for internet access only for its
+weather readout. Check it yourself with
+`aapt2 dump permissions dumbtv-home.apk`.
 
 **Who made this?**
-[Muzzammil](https://x.com/DevMuzzammil), with people who ran it on their own TVs
-and sent fixes and device reports. They are credited in the
-[README](../README.md#thanks).
+This edition is based on [humblemuzzu/dumbtv](https://github.com/humblemuzzu/dumbtv)
+and the work of its contributors, with the Apple TV-inspired interface developed
+and tested on the TCL reference television. Attribution is in the
+[README](../README.md#credits-licence-and-trademarks).
 
 **Can someone set it up for me?**
 Yes. Tell us which TV you have at [dumbtv.org/help](https://dumbtv.org/help) and we

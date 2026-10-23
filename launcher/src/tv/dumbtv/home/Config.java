@@ -52,19 +52,13 @@ final class Config {
         }
     }
 
-    static final Choice ACCENT = new Choice("accent", "Accent color", "blue",
+    static final Choice ACCENT = new Choice("accent", "Accent color", "white",
             new String[] {"white", "blue", "cyan", "green", "amber", "red", "pink", "violet"},
             new String[] {"White", "Blue", "Cyan", "Green", "Amber", "Red", "Pink", "Violet"});
-    static final Choice TILES = new Choice("tiles", "Tile size", "medium",
+    static final Choice TILES = new Choice("tiles", "Tile size", "large",
             new String[] {"small", "medium", "large"},
             new String[] {"Small", "Medium", "Large"});
-    static final Choice LAYOUT = new Choice("layout", "Layout", "rows",
-            new String[] {"rows", "grid"},
-            new String[] {"Rows", "Grid"});
-    static final Choice LABELS = new Choice("labels", "App names", "focus",
-            new String[] {"focus", "always", "never"},
-            new String[] {"On focus", "Always", "Never"});
-    static final Choice CLOCK = new Choice("clock", "Clock", "auto",
+    static final Choice CLOCK = new Choice("clock", "Clock", "12h",
             new String[] {"auto", "24h", "12h"},
             new String[] {"System", "24-hour", "12-hour"});
     static final Choice INPUTS = new Choice("inputs", "Inputs row", "on",
@@ -73,10 +67,16 @@ final class Config {
     static final Choice SWITCH = new Choice("switch", "Open inputs with", "auto",
             new String[] {"auto", "tv", "home"},
             new String[] {"Automatic", "The TV's app", "dumbtv home"});
-    static final Choice BACKGROUND = new Choice("background", "Background", "black",
+    static final Choice BACKGROUND = new Choice("background", "Background", "image",
             new String[] {"black", "graphite", "midnight", "image", "adaptive", "adaptive-tint"},
-            new String[] {"Black", "Graphite", "Midnight", "Image file", "Adaptive solid", "Adaptive wallpaper tint"});
-    static final Choice DIM = new Choice("dim", "Image dim", "40",
+            new String[] {"Black", "Graphite", "Midnight", "Wallpaper", "Adaptive solid", "Adaptive wallpaper"});
+    static final Choice WALLPAPER = new Choice("wallpaper", "Wallpaper", "aurora",
+            new String[] {"aurora", "alpine", "coast", "custom"},
+            new String[] {"Aurora Bay", "Alpine Aurora", "Golden Coast", "My photos"});
+    static final Choice MOTION = new Choice("motion", "Wallpaper motion", "still",
+            new String[] {"still", "live"},
+            new String[] {"Still", "Live slow pan"});
+    static final Choice DIM = new Choice("dim", "Image dim", "20",
             new String[] {"0", "20", "40", "60", "80"},
             new String[] {"0%", "20%", "40%", "60%", "80%"});
 
@@ -84,7 +84,8 @@ final class Config {
             new String[] {"off", "visit", "hourly", "daily", "daytime"},
             new String[] {"Off", "Every return home", "Every hour", "Every day", "By time of day"});
 
-    static final Choice[] CHOICES = {ACCENT, TILES, LAYOUT, LABELS, CLOCK, INPUTS, SWITCH, BACKGROUND, DIM, ROTATE};
+    static final Choice[] CHOICES = {ACCENT, TILES, INPUTS, SWITCH, BACKGROUND, WALLPAPER,
+            MOTION, DIM, ROTATE};
 
     /** Folder of wallpapers, next to home.conf, that Background › Image file rotates through. */
     static final String WALLPAPERS = "wallpapers";

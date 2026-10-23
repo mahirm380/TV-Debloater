@@ -1,38 +1,44 @@
-# dumbtv home
+# dumbtv home — Apple TV-inspired edition
 
-A home screen for Fire TV that does one job: show your apps and your HDMI inputs.
+A lightweight home screen for Fire OS, Android TV and Google TV that shows apps,
+hardware inputs, local weather and a clean wallpaper dock.
 
 <p align="center">
-  <img src="../docs/assets/screens/home.png" alt="dumbtv home: a clock, an Apps row and an Inputs row" width="720">
+  <img src="../docs/assets/screens/real-tv/tcl-50t6c-home.png" alt="Apple TV-inspired dumbtv home on a TCL 50T6C-UK" width="720">
 </p>
 
-- **54 KB.** Plain Java and Android views. No AndroidX, Kotlin, Compose, Play
-  Services or any other library.
-- **No network.** There is no `INTERNET` permission, so Android will not let it
-  open a connection.
-- **No permissions on Fire OS 7 and 8.** It declares three (usage access, task
-  order, boot completed), each limited to Android 8.1 and earlier, for the Fire OS 6
-  Keeper below. Check: `aapt2 dump permissions dumbtv-home.apk`.
+- **Small and simple.** Plain Java and Android views. No AndroidX, Kotlin,
+  Compose, Play Services or any other library.
+- **Weather only.** Network access is used for the configured current-weather
+  request to Open-Meteo. There are no ads, analytics, accounts or update checks.
+- **One permission on Fire OS 7 and 8.** `INTERNET` is used for weather. Three
+  additional declarations (usage access, task order and boot completed) are limited
+  to Android 8.1 and earlier for the Fire OS 6 Keeper below.
 - **No ads, no recommended rows, no account, no analytics, no update checks.**
 - About 60–70 MB of memory with the home screen showing, about 37 MB while an app
   plays (measured on a Fire TV Edition television with 1.4 GB of RAM).
 
 ## Install
 
-You need `adb` and a TV with ADB debugging on.
+You need `adb` and a compatible Android-based TV with ADB debugging on.
 
 ```sh
 adb connect <tv-ip>:5555         # accept "Allow USB debugging?" on the TV
 ./launcher/install.sh            # download, check the SHA-256, install, take over HOME
 ```
 
-The APK comes from this repository's
-[releases](https://github.com/humblemuzzu/dumbtv/releases/latest), and `install.sh`
-refuses it if the checksum differs from the one in `version.env`. Installing the
-APK by hand works, but HOME only switches over once `install.sh` (or
-`scripts/launcher.sh`) has set up the HOME hook described below.
+The repository includes the APK and `install.sh` refuses it if the checksum differs
+from `version.env`. If the bundled file is absent it downloads the matching release
+from the repository it was cloned from. Installing the APK by hand works, but HOME
+only switches over once `install.sh` (or `scripts/launcher.sh`) has set up the
+platform-specific HOME mechanism.
 
-Undo: `./launcher/install.sh --undo` gives HOME back to Amazon's launcher.
+On Android TV/Google TV the installer requests the normal Android HOME role and
+never disables the vendor launcher. Select **dumbtv home → Always** if the TV shows
+a chooser. Some manufacturers block third-party Home apps; on those devices it can
+still be opened from Apps.
+
+Undo: `./launcher/install.sh --undo` gives HOME back to the original launcher.
 
 ## Using it
 
@@ -40,7 +46,7 @@ Undo: `./launcher/install.sh --undo` gives HOME back to Amazon's launcher.
 |---|---|
 | OK | open the app, or switch to the input |
 | Hold OK, or ☰ Menu | Move, Rename, Hide, App info |
-| Move mode | ◀ ▶ moves the tile, ▲ ▼ moves it a line in the grid, any other key drops it |
+| Move mode | ◀ ▶ moves the tile, any other key drops it |
 | Up from the top row | Options and Settings |
 | Back on the home screen | jump to the first tile |
 | On an input: Back | back to the home screen |
@@ -53,21 +59,20 @@ Undo: `./launcher/install.sh --undo` gives HOME back to Amazon's launcher.
 |---|---|
 | Accent | white, blue, cyan, green, amber, red, pink, violet |
 | Tiles | small, medium, large |
-| Layout | rows, or a grid that wraps to as many columns as fit |
-| App names | on focus, always, never |
-| Clock | system, 24-hour, 12-hour |
 | Inputs row | shown, hidden |
 | Open inputs with | Automatic, the TV's app, dumbtv home (see below) |
 | Background | black, graphite, midnight, image, adaptive, adaptive tint |
+| Wallpaper | Aurora Bay, Alpine Aurora, Golden Coast, your photos |
+| Wallpaper motion | still, live slow pan |
 | Image dim, wallpaper rotation | for image backgrounds |
 
 Below them: Next wallpaper, which apps and inputs appear on the home screen, a
 reset for order, names and hidden tiles, and **Open Amazon's home screen**. Apps
 without a TV banner, like the Appstore, start hidden; tick them to add them.
 
-| Grid layout | Adaptive background | Adaptive tint |
-|---|---|---|
-| ![Grid layout](../docs/assets/screens/grid.png) | ![Adaptive background](../docs/assets/screens/adaptive.png) | ![Adaptive tint](../docs/assets/screens/tint.png) |
+| Adaptive background | Adaptive tint |
+|---|---|
+| ![Adaptive background](../docs/assets/screens/adaptive.png) | ![Adaptive tint](../docs/assets/screens/tint.png) |
 
 ## HDMI inputs
 
@@ -96,10 +101,6 @@ Everything lives in one text file on the TV:
 accent=blue
 # small medium large
 tiles=medium
-# rows grid
-layout=rows
-# focus always never
-labels=focus
 # auto 24h 12h
 clock=auto
 # on off
@@ -112,12 +113,40 @@ background=black
 dim=40
 # off visit hourly daily daytime (visit = every return to the home screen)
 rotate=off
+# on off
+weather=on
+weather.name=London
+weather.latitude=51.5074
+weather.longitude=-0.1278
+weather.timezone=Europe/London
+# celsius fahrenheit
+weather.unit=celsius
+# Optional. Package names, "airplay", or blank. Disabled by default.
+shortcut.netflix=com.plexapp.android
+shortcut.prime=airplay
+shortcut.freely=com.spotify.tv.android
+# Hardware scan codes are remote-specific. These three are TCL 50T6C-UK only.
+shortcut.netflix.scan=744
+shortcut.prime.scan=745
+shortcut.freely.scan=746
 apps.order=com.amazon.firetv.youtube,org.videolan.vlc
 apps.hide=org.videolan.vlc
 apps.show=com.amazon.venezia
 inputs.hide=com.droidlogic.tvinput/.services.AV1InputService/HW1
 name.com.droidlogic.tvinput/.services.Hdmi2InputService/HW6=PS5
 ```
+
+Weather and remote shortcuts can be written safely without replacing the rest of
+the file:
+
+```sh
+./launcher/configure.sh --weather-name London --latitude 51.5074 --longitude -0.1278 \
+  --timezone Europe/London --unit celsius
+./launcher/configure.sh --profile tcl-50t6c-uk
+```
+
+Remote remapping is off by default. The sample keys above document the tested TCL
+profile; do not copy its scan codes to another remote without checking them.
 
 Comments go on their own line. Back it up with `adb pull`, restore it with
 `adb push`; changes apply the next time the home screen comes back.
@@ -144,7 +173,15 @@ in `morning-coast.jpg`.
 `background=adaptive-tint` keeps the wallpaper and adds a light wash of that
 colour; without a wallpaper it shows graphite.
 
-## How HOME works on Fire OS
+## How HOME works
+
+### Android TV and Google TV
+
+Standard Android television builds expose a HOME role. The installer asks Android
+to assign it to `tv.dumbtv.home/.Home` and opens the system chooser when required.
+It does not disable the stock launcher, so unsupported vendor builds fail safely.
+
+### Fire OS
 
 Fire OS has no working "default launcher" setting, and Amazon's launcher is a
 protected package. Measured on a Fire OS 7 television:
@@ -222,7 +259,6 @@ Delete both to stop.
 |---|---|
 | `src/.../Home.java` | the home screen: clock, Apps row, Inputs row, tile menu, move mode |
 | `src/.../Tile.java` | one tile, drawn in a single `onDraw`: banner or icon, focus ring |
-| `src/.../Grid.java` | the grid layout |
 | `src/.../FocusColor.java` | the colour for the adaptive backgrounds |
 | `src/.../Catalog.java` | which apps and inputs exist, and their order |
 | `src/.../Item.java` | one app or input |
@@ -235,6 +271,7 @@ Delete both to stop.
 | `src/.../BootReceiver.java` | restarts the Keeper after a boot or an update |
 | `build.sh` | aapt2, javac, d8, zipalign, apksigner |
 | `install.sh` | download and checksum (or `--build`), install, HOME hook, `--undo` |
+| `configure.sh` | weather location and optional remote-button mappings |
 | `version.env` | the version and the release's SHA-256, read by the three scripts |
 | `release-check.sh` | checks that the version, the built APK and the GitHub release agree |
 | `tests/FocusColorTest.java` | host-side test for `FocusColor`, run by CI |
@@ -242,7 +279,7 @@ Delete both to stop.
 ## Releasing
 
 1. Bump `VERSION`, `VERSION_CODE` and `VERSION_NAME` in `version.env`.
-2. `./build.sh`, copy `build/dumbtv-home.apk` to `build/dumbtv-home-<VERSION>.apk`,
+2. `./build.sh`, copy `build/dumbtv-home.apk` to `prebuilt/dumbtv-home.apk`,
    and put its SHA-256 in `version.env`.
 3. Upload it as `dumbtv-home.apk` to a release tagged `launcher-v<VERSION>`.
 4. `./launcher/release-check.sh` fails if the tag, the APK and the hash disagree.

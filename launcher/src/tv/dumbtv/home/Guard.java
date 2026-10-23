@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
@@ -38,6 +39,7 @@ public final class Guard extends AccessibilityService {
     private static final long COVER_MAX_MS = 1500;
     private static final long REPEAT_MS = 1000;
     private static final long LAUNCH_FALLBACK_MS = 150;
+    private static final long SHORTCUT_REPEAT_MS = 750;
 
     private static volatile boolean paused;
     private static Guard running;
@@ -47,6 +49,7 @@ public final class Guard extends AccessibilityService {
     private final Runnable launch = () -> home(this);
     private View cover;
     private long lastLaunch;
+    private long lastShortcutLaunch;
 
     /** Lets Amazon's home stay on screen until the user leaves it. */
     static void pause() {
@@ -117,9 +120,10 @@ public final class Guard extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent e) {
-        if (e.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
         CharSequence pkg = e.getPackageName(), cls = e.getClassName();
         if (pkg == null) return;
+        if (e.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        if (redirectBrandedShortcut(pkg)) return;
         if (!AMAZON.contentEquals(pkg)) {
             if ("com.android.systemui".contentEquals(pkg) || "android".contentEquals(pkg)) return;
             paused = false;
@@ -131,6 +135,83 @@ public final class Guard extends AccessibilityService {
         if (now - lastLaunch < REPEAT_MS) return;
         lastLaunch = now;
         launchWhenCovered();
+    }
+
+    /**
+     * Fire OS consumes KEYCODE_APP_1..3 in system_server before an accessibility key filter can
+     * receive them. The resulting branded activities are therefore the reliable interception
+     * point on this TV. Freely may hand off to channel setup immediately, so Spotify is brought
+     * forward once more after that hand-off without intercepting Live TV's channel setup itself.
+     */
+    private boolean redirectBrandedShortcut(CharSequence pkg) {
+        final String key;
+        final boolean freely;
+        if ("com.netflix.ninja".contentEquals(pkg)) {
+            key = "shortcut.netflix";
+            freely = false;
+        } else if ("com.amazon.firebat".contentEquals(pkg)) {
+            key = "shortcut.prime";
+            freely = false;
+        } else if ("com.vewd.core.opapp".contentEquals(pkg)) {
+            key = "shortcut.freely";
+            freely = true;
+        } else {
+            return false;
+        }
+        final String targetPkg = Config.get(this).get(key, "");
+        if (targetPkg.isEmpty()) return false;
+        long now = SystemClock.uptimeMillis();
+        if (now - lastShortcutLaunch < SHORTCUT_REPEAT_MS) return true;
+        lastShortcutLaunch = now;
+        launchApp(targetPkg);
+        if (freely) handler.postDelayed(() -> launchApp(targetPkg), 900);
+        return true;
+    }
+
+    @Override
+    protected boolean onKeyEvent(KeyEvent e) {
+        Config config = Config.get(this);
+        String pkg = shortcutForScan(config, e.getScanCode());
+        if (pkg.isEmpty()) return super.onKeyEvent(e);
+        if (e.getAction() == KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
+            launchApp(pkg);
+        }
+        return true;
+    }
+
+    private String shortcutForScan(Config config, int scanCode) {
+        for (String name : new String[] {"netflix", "prime", "freely"}) {
+            String target = config.get("shortcut." + name, "");
+            if (!target.isEmpty() && scanCode == number(config.get("shortcut." + name + ".scan", "-1"))) {
+                return target;
+            }
+        }
+        return "";
+    }
+
+    private static int number(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    private void launchApp(String pkg) {
+        if ("airplay".equals(pkg) || "com.apple.airplay.amazon.airplay".equals(pkg)) {
+            startActivity(new Intent(this, AirPlay.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP));
+            return;
+        }
+        Intent i = getPackageManager().getLeanbackLaunchIntentForPackage(pkg);
+        if (i == null) i = getPackageManager().getLaunchIntentForPackage(pkg);
+        if (i == null) return;
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        try {
+            startActivity(i);
+        } catch (ActivityNotFoundException | SecurityException ignored) {
+            // Keep the original shortcut suppressed if its replacement is later uninstalled.
+        }
     }
 
     /**

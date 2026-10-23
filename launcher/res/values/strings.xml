@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">dumbtv</string>
     <string name="guard_label">dumbtv home button</string>
-    <string name="guard_description">Sends the HOME button to the dumbtv home screen instead of Amazon\'s. It reads no screen content and has no internet access.</string>
+    <string name="guard_description">Sends the HOME button to the dumbtv home screen instead of Amazon\'s. It reads no screen content; network access is used only for the optional weather readout.</string>
 </resources>

@@ -13,7 +13,7 @@ final class Ui {
     static final int TEXT = 0xFFF2F2F3;
     static final int MUTED = 0x99FFFFFF;
     static final int FAINT = 0x66FFFFFF;
-    static final int SURFACE = 0xFF1C1D21;
+    static final int SURFACE = 0xD91A1D24;
     static final int DIALOG = android.R.style.Theme_DeviceDefault_Dialog_Alert;
     static final Typeface LIGHT = Typeface.create("sans-serif-light", Typeface.NORMAL);
     static final Typeface MEDIUM = Typeface.create("sans-serif-medium", Typeface.NORMAL);
@@ -42,6 +42,15 @@ final class Ui {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
         d.setCornerRadius(radius);
+        return d;
+    }
+
+    /** Translucent wallpaper glass with the warm hairline used by both home-screen docks. */
+    static GradientDrawable glass(Context c) {
+        GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[] {0xA64A536A, 0x9430394F, 0xA64A4055});
+        d.setCornerRadius(dp(c, 28));
+        d.setStroke(dp(c, 1), 0xD9FF806F);
         return d;
     }
 

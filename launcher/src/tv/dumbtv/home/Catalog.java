@@ -50,11 +50,11 @@ final class Catalog {
         }
     }
 
-    /** Loads a banner, or an icon when the app ships no banner. Slow: call off the UI thread. */
+    /** Loads contained dock artwork and the app icon. Slow: call off the UI thread. */
     static void art(PackageManager pm, Item it) {
         if (it.info == null) return;
         it.banner = it.info.loadBanner(pm);
-        if (it.banner == null) it.icon = it.info.loadIcon(pm);
+        it.icon = it.info.loadIcon(pm);
     }
 
     /**
@@ -77,10 +77,19 @@ final class Catalog {
             (in.getType() == TvInputInfo.TYPE_HDMI ? out : other).add(it);
         }
         Collator collator = Collator.getInstance();
-        Collections.sort(out, (a, b) -> collator.compare(a.label.toString(), b.label.toString()));
+        Collections.sort(out, (a, b) -> {
+            int preferred = Integer.compare(inputPriority(a), inputPriority(b));
+            return preferred != 0 ? preferred : collator.compare(a.label.toString(), b.label.toString());
+        });
         Collections.sort(other, (a, b) -> collator.compare(a.label.toString(), b.label.toString()));
         out.addAll(other);
         return out;
+    }
+
+    /** This TV's console is the first input, followed by the remaining HDMI ports in order. */
+    private static int inputPriority(Item item) {
+        String name = item.label.toString().toLowerCase(java.util.Locale.ROOT);
+        return name.contains("playstation") || name.equals("ps5") ? 0 : 1;
     }
 
     static CharSequence label(Config cfg, Item it) {
@@ -89,7 +98,8 @@ final class Catalog {
 
     static boolean shown(Config cfg, String kind, Item it) {
         if (cfg.list(kind + ".hide").contains(it.id)) return false;
-        return !APPS.equals(kind) || it.leanback || cfg.list("apps.show").contains(it.id);
+        return !APPS.equals(kind) || it.leanback || "com.amazon.venezia".equals(it.id)
+                || cfg.list("apps.show").contains(it.id);
     }
 
     static void setShown(Config cfg, String kind, Item it, boolean on) {

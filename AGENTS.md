@@ -56,7 +56,7 @@ Every step is undone by `./scripts/restore.sh`.
 |---|---|
 | Fire OS 6, 7, 8 (`ro.product.manufacturer` starts with `Amazon`) | the scripts below |
 | Fire OS 5 and older | nothing: they refuse `pm disable-user`. Say so. |
-| Android TV, Google TV | by hand, from `data/androidtv/packages.txt` and its `never-disable.txt`; read [docs/OTHER-TVS.md](docs/OTHER-TVS.md) first. The scripts refuse these. |
+| Android TV, Google TV | `launcher/install.sh` may install the launcher without disabling the stock home. Cleanup is by hand from `data/androidtv/packages.txt` and its `never-disable.txt`; read [docs/OTHER-TVS.md](docs/OTHER-TVS.md) first. The cleanup scripts refuse these. |
 | Samsung, LG, Roku, Vizio, Hisense VIDAA, Panasonic, Philips Saphi | no shell for an owner. Say so plainly, point at [docs/OTHER-TVS.md](docs/OTHER-TVS.md), and do not invent steps. |
 
 Check [catalog/devices/](catalog/devices/) for the model first: the menu path,
@@ -88,7 +88,7 @@ people take them.
 |---|---|---|---|
 | 1 | "Do you watch Prime Video?" No blocks the servers it needs. | yes | `--prime 0\|1` |
 | 2 | "Do you use Alexa or the voice button on the remote?" No switches off Alexa and the app that owns the microphone. | keep | `--alexa 0\|1` |
-| 3 | "Replace Amazon's home screen with dumbtv home?" Open source, apps and inputs only, no ads, no internet access. | yes | `--launcher 0\|1` |
+| 3 | "Replace Amazon's home screen with dumbtv home?" Open source, apps, inputs and optional local weather, with no ads or tracking. | yes | `--launcher 0\|1` |
 | 4 | "Run the DNS filter on the TV?" It is what stops telemetry and automatic updates. Without it, the protected Amazon packages keep reporting. | yes | `--dnsfilter 0\|1` |
 | 5 | "Are there apps you want removed?" Get names, map them to packages with `data/apps.txt` and `adb shell pm list packages -3`, and read the list back before recording it. | none | `--remove "pkg pkg"` |
 | 6 | "Do you want the YouTube app replaced with SmartTube?" No ads and no Shorts, a different app, same Google account. Ask once; if no, drop it. | no | `--youtube 0\|1` |

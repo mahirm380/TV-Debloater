@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs dumbtv home on the TV and gives it the HOME button.
+# Installs dumbtv home on a Fire OS, Android TV or Google TV device and requests HOME.
 #   ./launcher/install.sh            download the release APK (checksum-verified), install, take over HOME
 #   ./launcher/install.sh --build    build from source instead (needs a JDK and the Android SDK)
 #   ./launcher/install.sh --undo     hand HOME back to Amazon's launcher
@@ -9,7 +9,17 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # shellcheck disable=SC1091
 source version.env
-APK_URL=https://github.com/humblemuzzu/dumbtv/releases/download/launcher-v$VERSION/dumbtv-home.apk
+
+release_repo() {
+  local url repo
+  url=$(git -C .. config --get remote.origin.url 2>/dev/null || true)
+  repo=${url#*github.com[:/]}
+  repo=${repo%.git}
+  [[ $repo == */* ]] || repo=humblemuzzu/dumbtv
+  printf '%s' "$repo"
+}
+RELEASE_REPO=${DUMBTV_RELEASE_REPO:-$(release_repo)}
+APK_URL=https://github.com/$RELEASE_REPO/releases/download/launcher-v$VERSION/dumbtv-home.apk
 
 PKG=tv.dumbtv.home
 GUARD=$PKG/$PKG.Guard
@@ -31,6 +41,14 @@ esac
 command -v "$ADB" >/dev/null || { echo "error: adb not found — install Android platform-tools" >&2; exit 1; }
 state=$(adb_ get-state 2>/dev/null || true)
 [[ $state == device ]] || { echo "error: no TV connected (adb connect <tv-ip>:5555; set ADB_SERIAL if several)" >&2; exit 1; }
+
+manufacturer=$(sh_ getprop ro.product.manufacturer | tr -d '\r')
+manufacturer_lower=$(printf '%s' "$manufacturer" | tr '[:upper:]' '[:lower:]')
+if installed com.amazon.tv.launcher || [[ $manufacturer_lower == amazon ]]; then
+  platform=fireos
+else
+  platform=androidtv
+fi
 
 # Alarms normally fire no sooner than 5 s from now; the home switch needs them immediate.
 set_futurity() {
@@ -77,13 +95,21 @@ sha256() {
 }
 
 if [[ $mode == undo ]]; then
-  # force-stop also keeps the Fire OS 6 Keeper from restarting at the next boot.
-  sh_ am force-stop $PKG >/dev/null 2>&1 || true
-  sh_ appops set $PKG GET_USAGE_STATS default >/dev/null 2>&1 || true
-  set_futurity off
-  set_guard ""
-  sh_ am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1 || true
-  echo "HOME handed back to Amazon's launcher (dumbtv home stays installed: adb uninstall $PKG)"
+  if [[ $platform == fireos ]]; then
+    # force-stop also keeps the Fire OS 6 Keeper from restarting at the next boot.
+    sh_ am force-stop $PKG >/dev/null 2>&1 || true
+    sh_ appops set $PKG GET_USAGE_STATS default >/dev/null 2>&1 || true
+    set_futurity off
+    set_guard ""
+    sh_ am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1 || true
+    echo "HOME handed back to Amazon's launcher (dumbtv home stays installed: adb uninstall $PKG)"
+  else
+    sh_ cmd package clear-package-preferred-activities $PKG >/dev/null 2>&1 \
+      || sh_ pm clear-package-preferred-activities $PKG >/dev/null 2>&1 || true
+    sh_ am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1 || true
+    echo "HOME preference cleared. Choose the TV's original launcher if Android shows a picker."
+    echo "dumbtv home stays installed: adb uninstall $PKG"
+  fi
   exit 0
 fi
 
@@ -104,7 +130,12 @@ if [[ $mode == build ]]; then
   build_apk
 else
   mkdir -p build
-  APK=build/dumbtv-home-$VERSION.apk
+  if [[ -f prebuilt/dumbtv-home.apk && $(sha256 prebuilt/dumbtv-home.apk) == "$APK_SHA256" ]]; then
+    APK=prebuilt/dumbtv-home.apk
+    echo "using bundled, checksum-verified dumbtv home $VERSION"
+  else
+    APK=build/dumbtv-home-$VERSION.apk
+  fi
   if [[ ! -f $APK || $(sha256 "$APK") != "$APK_SHA256" ]]; then
     echo "downloading dumbtv home $VERSION"
     # --retry-all-errors: GitHub's release CDN sometimes resets the first connection.
@@ -137,7 +168,25 @@ case $out in
 esac
 echo "installed $PKG"
 
-sh_ dumpsys deviceidle whitelist +$PKG >/dev/null
+sh_ dumpsys deviceidle whitelist +$PKG >/dev/null 2>&1 || true
+
+if [[ $platform == androidtv ]]; then
+  # Stock Android/Google TV supports a normal HOME role. Some vendors still display a chooser;
+  # launching HOME makes that visible without disabling the vendor's launcher.
+  sh_ cmd package set-home-activity $PKG/.Home >/dev/null 2>&1 || true
+  sh_ am start -W -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1 \
+    || sh_ am start -W -n $PKG/.Home >/dev/null
+  sleep 1
+  front=$(sh_ dumpsys window | grep -m1 mCurrentFocus || true)
+  if [[ $front == *"$PKG"* ]]; then
+    echo "home: dumbtv (standard Android HOME role)"
+  else
+    sh_ am start -W -n $PKG/.Home >/dev/null 2>&1 || true
+    echo "dumbtv home is installed. If the TV shows a Home app chooser, select dumbtv home and Always."
+    echo "If the vendor blocks third-party launchers, open dumbtv home from Apps instead; nothing was disabled."
+  fi
+  exit 0
+fi
 
 # Fire OS 6.7 refuses third-party accessibility services (A11yAuthorizer), so the Guard
 # cannot bind there. Keeper watches Amazon's home through UsageStats and calls

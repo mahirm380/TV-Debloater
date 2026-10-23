@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
   - name: Troubleshooting
-    url: https://github.com/humblemuzzu/dumbtv/blob/main/docs/TROUBLESHOOTING.md
+    url: https://github.com/mahirm380/TV-Debloater/blob/main/docs/TROUBLESHOOTING.md
     about: The common problems and their fixes, sorted by what you see on the TV
   - name: Step-by-step guide
-    url: https://dumbtv.org/start
+    url: https://github.com/mahirm380/TV-Debloater/blob/main/docs/INSTALL-GUIDE.md
     about: Turn on ADB, find the TV's address, install adb and run dumbtv
-  - name: Ask for help setting it up
-    url: https://dumbtv.org/help
-    about: Tell us which TV you have and we will reply by email
+  - name: AI-assisted setup guide
+    url: https://github.com/mahirm380/TV-Debloater/blob/main/docs/AI-SETUP.md
+    about: Copy the safe setup prompt into a terminal-capable coding agent

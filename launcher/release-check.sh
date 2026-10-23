@@ -3,12 +3,20 @@
 # agree. Run this before publishing or recording instructions, and in CI.
 #
 #   ./launcher/release-check.sh            local build (if present) + remote release
-#   ./launcher/release-check.sh --local    only launcher/build/dumbtv-home-<VERSION>.apk
+#   ./launcher/release-check.sh --local    only the bundled/prebuilt APK
 #   ./launcher/release-check.sh --remote   only the GitHub release
 #   ./launcher/release-check.sh --manifest only launcher/version.env (used by CI)
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
-REPO=https://github.com/humblemuzzu/dumbtv
+release_repo() {
+  local url repo
+  url=$(git -C .. config --get remote.origin.url 2>/dev/null || true)
+  repo=${url#*github.com[:/]}
+  repo=${repo%.git}
+  [[ $repo == */* ]] || repo=mahirm380/TV-Debloater
+  printf 'https://github.com/%s' "$repo"
+}
+REPO=${DUMBTV_RELEASE_REPO_URL:-$(release_repo)}
 
 mode=${1:-all}
 case $mode in
@@ -41,12 +49,13 @@ grep -q 'version.env' build.sh   || bad "build.sh does not source version.env"
 
 # --- local build ------------------------------------------------------------
 if [[ $mode == both || $mode == --local ]]; then
-  APK=build/dumbtv-home-$VERSION.apk
+  APK=prebuilt/dumbtv-home.apk
+  [[ -f $APK ]] || APK=build/dumbtv-home-$VERSION.apk
   if [[ -f $APK ]]; then
     got=$(sha256 "$APK")
     [[ $got == "$APK_SHA256" ]] && ok "$APK matches" || bad "$APK is $got, version.env says $APK_SHA256 — rebuild and update the hash"
   else
-    [[ $mode == --local ]] && bad "$APK not built (run ./build.sh)" || echo "  note  $APK not built, skipping local check"
+    [[ $mode == --local ]] && bad "$APK missing (build it and copy it to prebuilt/)" || echo "  note  $APK missing, skipping local check"
   fi
 fi
 
@@ -73,7 +82,8 @@ if [[ $fail == 0 ]]; then
   echo "release consistent"
 else
   echo
-  echo "fix: edit launcher/version.env, ./build.sh, upload the APK to tag launcher-v\$VERSION,"
+  echo "fix: edit launcher/version.env, ./build.sh, copy the APK to launcher/prebuilt/,"
+  echo "     upload the same APK to tag launcher-v\$VERSION,"
   echo "     then run this again. The tag, the hash and the APK must be one commit."
 fi
 exit $fail

@@ -35,7 +35,7 @@ has a flag: `--brand`, `--model`, `--platform`, `--status`, `--developer-mode`,
 `--notes "text"`, `--github handle`, `--no-device`, `--dry-run`.
 
 **From a browser**, with no git: open an issue with the
-[Device report](https://github.com/humblemuzzu/dumbtv/issues/new?template=device-report.yml)
+[Device report](https://github.com/mahirm380/TV-Debloater/issues/new?template=device-report.yml)
 template.
 
 What makes a good report:
@@ -61,8 +61,9 @@ The rules the code keeps, and that a change must keep too:
   touched.
 - Amazon packages are disabled, never uninstalled.
 - No app a person uses is removed unless they named it.
-- The launcher asks for no permissions on Fire OS 7 and 8 and has no internet
-  access. CI enforces this.
+- The launcher asks only for `INTERNET` on Fire OS 7 and 8, used for the optional
+  Open-Meteo weather readout. It has no ads, analytics, account or update service.
+  CI enforces the permission limit.
 - Every step can be undone with `scripts/restore.sh`.
 
 Test on a real TV, say which one and which build in the pull request, and run the

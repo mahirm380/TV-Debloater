@@ -4,8 +4,8 @@
 #   MIN_SDK=25 (default)  one APK for Fire OS 6, 7 and 8: the published release. Compiling
 #                         against android-25 makes javac reject any android.* API Fire OS 6
 #                         lacks; java.* calls are checked against JDK 8 by --release 8, so keep
-#                         them to what Android 7.1 has. Fire OS 7/8 see no permissions: the
-#                         Keeper's three are capped at maxSdkVersion 27.
+#                         them to what Android 7.1 has. Fire OS 7/8 see only INTERNET for
+#                         optional weather; the Keeper's three are capped at maxSdkVersion 27.
 #   MIN_SDK=28            Android 9+ only, as releases up to 1.1 were
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -13,14 +13,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # shellcheck disable=SC1091
 source version.env
 MIN_SDK=${MIN_SDK:-25}
+COMPILE_SDK=${COMPILE_SDK:-$MIN_SDK}
 
 SDK=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}
 if [[ -z $SDK ]]; then
   for d in /opt/homebrew/share/android-commandlinetools "$HOME/Library/Android/sdk"; do
-    if [[ -f $d/platforms/android-$MIN_SDK/android.jar ]]; then SDK=$d; break; fi
+    if [[ -f $d/platforms/android-$COMPILE_SDK/android.jar ]]; then SDK=$d; break; fi
   done
 fi
-JAR=$SDK/platforms/android-$MIN_SDK/android.jar
+JAR=$SDK/platforms/android-$COMPILE_SDK/android.jar
 BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -1 || true)
 [[ -f $JAR ]] || { echo "error: $JAR missing — sdkmanager 'platforms;android-$MIN_SDK'" >&2; exit 1; }
 [[ -x $BT/aapt2 ]] || { echo "error: no build-tools in $SDK — sdkmanager 'build-tools;34.0.0'" >&2; exit 1; }
@@ -69,7 +70,7 @@ mkdir -p "$WORK/gen" "$WORK/classes" build
   --java "$WORK/gen" -o "$WORK/app.apk"
 
 find src "$WORK/gen" -name '*.java' > "$WORK/sources.txt"
-"$JAVA_HOME/bin/javac" --release 8 -Xlint:all -Xlint:-options -Werror -encoding UTF-8 \
+"$JAVA_HOME/bin/javac" --release 8 -Xlint:all -Xlint:-options -Xlint:-deprecation -Werror -encoding UTF-8 \
   -classpath "$JAR" -d "$WORK/classes" @"$WORK/sources.txt"
 
 find "$WORK/classes" -name '*.class' > "$WORK/classes.txt"

@@ -1,0 +1,27 @@
+name: publish launcher release
+
+on:
+  push:
+    tags:
+      - "launcher-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: verify bundled APK and version
+        run: |
+          source launcher/version.env
+          [ "$GITHUB_REF_NAME" = "launcher-v$VERSION" ]
+          echo "$APK_SHA256  launcher/prebuilt/dumbtv-home.apk" | sha256sum --check --strict
+      - name: publish checksum-verified APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" launcher/prebuilt/dumbtv-home.apk \
+            --title "dumbtv home $GITHUB_REF_NAME" \
+            --notes "Apple TV-inspired launcher. See README.md for compatibility, installation, privacy and recovery instructions."

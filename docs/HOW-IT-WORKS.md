@@ -116,8 +116,8 @@ only and reads no screen content.
 accessibility services. `Keeper` reads the foreground app from UsageStats and calls
 `moveTaskToFront` when Amazon's home appears. That is not an activity launch, so
 the 5 s delay does not apply. It is the only reason the launcher asks for any
-permission at all, and those three permissions are capped at Android 8.1, so Fire
-OS 7 and 8 see none.
+system permission; those three declarations are capped at Android 8.1. Fire OS 7
+and 8 only see the ordinary internet permission used for the optional weather readout.
 
 Holding HOME still opens Fire OS's quick menu, and the launcher's Options can open
 Amazon's home on purpose.
