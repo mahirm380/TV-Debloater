@@ -1,4 +1,8 @@
-# Apple TV-style dumbtv home
+# TV-Debloater
+
+[![Validate](https://github.com/mahirm380/TV-Debloater/actions/workflows/validate.yml/badge.svg)](https://github.com/mahirm380/TV-Debloater/actions/workflows/validate.yml)
+[![Latest launcher](https://img.shields.io/github/v/release/mahirm380/TV-Debloater?include_prereleases&label=launcher)](https://github.com/mahirm380/TV-Debloater/releases/tag/launcher-v2.0)
+[![License](https://img.shields.io/github/license/mahirm380/TV-Debloater)](LICENSE)
 
 An open-source, Apple TV-inspired home screen for Fire TV, Android TV and Google
 TV, plus the proven privacy cleanup from
@@ -19,6 +23,13 @@ does not root the TV, flash firmware or replace the operating system.
 
 _Real 1920×1080 screenshot from a TCL 50T6C-UK Fire TV. No mock-up and no personal
 network identifiers._
+
+▶ **[Watch the 19-second demo](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-demo-landscape.mp4)** ·
+**[Download the vertical version](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-demo-vertical.mp4)** ·
+**[Share the poster](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-launch-poster.png)**
+
+If it works on your TV, please star the repository and add your model to the
+[community device-testing thread](https://github.com/mahirm380/TV-Debloater/issues/1).
 
 ## Install it with one prompt
 
