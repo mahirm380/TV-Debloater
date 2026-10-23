@@ -6,6 +6,9 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <!-- Used only for the optional Open-Meteo weather readout on the home screen. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the launcher open Android's protected uninstall confirmation screen.
+         It does not grant silent uninstall access. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <!-- Fire OS 6 only: the Keeper reads the foreground package through UsageStats.
          maxSdkVersion keeps Fire OS 7/8 on the permission-free accessibility path. -->

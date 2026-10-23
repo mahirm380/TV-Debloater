@@ -11,9 +11,11 @@ hardware inputs, local weather and a clean wallpaper dock.
   Compose, Play Services or any other library.
 - **Weather only.** Network access is used for the configured current-weather
   request to Open-Meteo. There are no ads, analytics, accounts or update checks.
-- **One permission on Fire OS 7 and 8.** `INTERNET` is used for weather. Three
-  additional declarations (usage access, task order and boot completed) are limited
-  to Android 8.1 and earlier for the Fire OS 6 Keeper below.
+- **Two narrow permissions on Fire OS 7 and 8.** `INTERNET` is used for weather.
+  `REQUEST_DELETE_PACKAGES` only opens the TV's protected uninstall confirmation;
+  it cannot remove an app silently. Three additional declarations (usage access,
+  task order and boot completed) are limited to Android 8.1 and earlier for the
+  Fire OS 6 Keeper below.
 - **No ads, no recommended rows, no account, no analytics, no update checks.**
 - About 60–70 MB of memory with the home screen showing, about 37 MB while an app
   plays (measured on a Fire TV Edition television with 1.4 GB of RAM).

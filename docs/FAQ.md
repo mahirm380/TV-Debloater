@@ -108,8 +108,9 @@ the rest of the cleanup: the packages, the settings and the home screen.
 
 **Why its own launcher?**
 A home screen needs no advertising ID and no permission to install apps. This
-customised dumbtv home is open source and asks for internet access only for its
-weather readout. Check it yourself with
+customised dumbtv home is open source. It asks for internet access only for its
+weather readout, plus `REQUEST_DELETE_PACKAGES` so it can open the TV's protected
+uninstall confirmation screen. That permission cannot remove apps silently. Check it yourself with
 `aapt2 dump permissions dumbtv-home.apk`.
 
 **Who made this?**

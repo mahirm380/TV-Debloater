@@ -117,7 +117,10 @@ accessibility services. `Keeper` reads the foreground app from UsageStats and ca
 `moveTaskToFront` when Amazon's home appears. That is not an activity launch, so
 the 5 s delay does not apply. It is the only reason the launcher asks for any
 system permission; those three declarations are capped at Android 8.1. Fire OS 7
-and 8 only see the ordinary internet permission used for the optional weather readout.
+and 8 see the ordinary internet permission used for the optional weather readout,
+plus `REQUEST_DELETE_PACKAGES`. The latter only allows the launcher to ask the
+TV's package installer to show its own uninstall confirmation; it cannot silently
+remove an app.
 
 Holding HOME still opens Fire OS's quick menu, and the launcher's Options can open
 Amazon's home on purpose.
