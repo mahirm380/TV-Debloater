@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -1001,8 +1002,11 @@ public final class Home extends Activity {
 
     private void menu(Tile t) {
         boolean app = Catalog.APPS.equals(t.kind);
+        boolean uninstallable = app && uninstallable(t.item);
         String[] actions = app
-                ? new String[] {"Move", "Rename", "Hide", "App info"}
+                ? uninstallable
+                        ? new String[] {"Move", "Rename", "Hide", "Uninstall", "App info"}
+                        : new String[] {"Move", "Rename", "Hide", "App info"}
                 : new String[] {"Move", "Rename", "Hide"};
         new AlertDialog.Builder(this, Ui.DIALOG)
                 .setTitle(Catalog.label(cfg, t.item))
@@ -1022,11 +1026,51 @@ public final class Home extends Activity {
                             Toast.makeText(this, "Hidden. Bring it back from Options.", Toast.LENGTH_SHORT).show();
                             break;
                         default:
-                            launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                    Uri.fromParts("package", t.item.id, null)), null);
+                            if (uninstallable && which == 3) confirmUninstall(t.item);
+                            else appInfo(t.item.id);
                     }
                 })
                 .show();
+    }
+
+    /** Only user-installed apps get an uninstall action; firmware apps keep App info only. */
+    private boolean uninstallable(Item item) {
+        ApplicationInfo info = item.info == null ? null : item.info.applicationInfo;
+        if (info == null) return false;
+        int protectedFlags = ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
+        return (info.flags & protectedFlags) == 0;
+    }
+
+    private void confirmUninstall(Item item) {
+        CharSequence label = Catalog.label(cfg, item);
+        new AlertDialog.Builder(this, Ui.DIALOG)
+                .setTitle("Uninstall " + label + "?")
+                .setMessage("This removes the app and its data from this TV. "
+                        + "The TV will ask you to confirm once more.")
+                .setPositiveButton("Continue", (dialog, which) -> uninstall(item.id))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void uninstall(String packageName) {
+        Intent request = new Intent(Intent.ACTION_DELETE,
+                Uri.fromParts("package", packageName, null));
+        if (request.resolveActivity(getPackageManager()) == null) {
+            Toast.makeText(this, "This TV does not allow that app to be uninstalled.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            startActivity(request);
+        } catch (ActivityNotFoundException | SecurityException e) {
+            Toast.makeText(this, "This TV does not allow that app to be uninstalled.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void appInfo(String packageName) {
+        launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", packageName, null)), null);
     }
 
     private void rename(Tile t) {

@@ -45,7 +45,7 @@ Undo: `./launcher/install.sh --undo` gives HOME back to the original launcher.
 | Remote | Does |
 |---|---|
 | OK | open the app, or switch to the input |
-| Hold OK, or ☰ Menu | Move, Rename, Hide, App info |
+| Hold OK, or ☰ Menu | Move, Rename, Hide, Uninstall, App info |
 | Move mode | ◀ ▶ moves the tile, any other key drops it |
 | Up from the top row | Options and Settings |
 | Back on the home screen | jump to the first tile |
@@ -69,6 +69,10 @@ Undo: `./launcher/install.sh --undo` gives HOME back to the original launcher.
 Below them: Next wallpaper, which apps and inputs appear on the home screen, a
 reset for order, names and hidden tiles, and **Open Amazon's home screen**. Apps
 without a TV banner, like the Appstore, start hidden; tick them to add them.
+
+**Uninstall** appears only for apps installed by the owner. It first shows a
+launcher warning and then opens Android/Fire OS's own uninstall confirmation.
+Built-in system apps cannot be silently removed and keep **App info** instead.
 
 | Adaptive background | Adaptive tint |
 |---|---|

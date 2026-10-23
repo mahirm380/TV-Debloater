@@ -1,7 +1,7 @@
 # TV-Debloater
 
 [![Validate](https://github.com/mahirm380/TV-Debloater/actions/workflows/validate.yml/badge.svg)](https://github.com/mahirm380/TV-Debloater/actions/workflows/validate.yml)
-[![Latest launcher](https://img.shields.io/github/v/release/mahirm380/TV-Debloater?include_prereleases&label=launcher)](https://github.com/mahirm380/TV-Debloater/releases/tag/launcher-v2.0)
+[![Latest launcher](https://img.shields.io/github/v/release/mahirm380/TV-Debloater?include_prereleases&label=launcher)](https://github.com/mahirm380/TV-Debloater/releases/tag/launcher-v2.1)
 [![License](https://img.shields.io/github/license/mahirm380/TV-Debloater)](LICENSE)
 
 An open-source, Apple TV-inspired home screen for Fire TV, Android TV and Google
@@ -24,9 +24,9 @@ does not root the TV, flash firmware or replace the operating system.
 _Real 1920×1080 screenshot from a TCL 50T6C-UK Fire TV. No mock-up and no personal
 network identifiers._
 
-▶ **[Watch the 19-second demo](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-demo-landscape.mp4)** ·
-**[Download the vertical version](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-demo-vertical.mp4)** ·
-**[Share the poster](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.0/tv-debloater-launch-poster.png)**
+▶ **[Watch the 19-second demo](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.1/tv-debloater-demo-landscape.mp4)** ·
+**[Download the vertical version](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.1/tv-debloater-demo-vertical.mp4)** ·
+**[Share the poster](https://github.com/mahirm380/TV-Debloater/releases/download/launcher-v2.1/tv-debloater-launch-poster.png)**
 
 If it works on your TV, please star the repository and add your model to the
 [community device-testing thread](https://github.com/mahirm380/TV-Debloater/issues/1).
@@ -88,6 +88,9 @@ The appearance-only install:
 - Keeps an Appstore/Play Store tile when the TV exposes one.
 - Can optionally remap branded remote buttons. Remapping is **off by default** and
   is configured for the specific remote only after the owner asks.
+- Lets the owner uninstall downloaded apps from a tile's hold-OK/Menu screen,
+  with both a launcher warning and the TV's normal system confirmation. Firmware
+  apps remain protected.
 
 The optional Fire OS cleanup also:
 
@@ -108,6 +111,12 @@ alone is undone with `./launcher/install.sh --undo`.
 | ![Aurora Bay home screen](docs/assets/screens/real-tv/tcl-50t6c-home.png) | ![Wallpaper options on the TV](docs/assets/screens/real-tv/tcl-50t6c-options.png) |
 
 ![Alpine Aurora live-wallpaper option](docs/assets/screens/real-tv/tcl-50t6c-alpine.png)
+
+![Downloaded-app menu with the protected Uninstall action](docs/assets/screens/real-tv/tcl-50t6c-uninstall-menu.png)
+
+Hold OK or press Menu on a downloaded app to move, rename, hide, uninstall or
+open its system information. Uninstalling requires a launcher warning followed
+by the TV's own confirmation; the action is not shown for firmware apps.
 
 The dock scrolls one complete tile at a time, shows the selected app's name, and
 keeps the inputs in a separate aligned row. The greeting changes between morning,
