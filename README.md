@@ -20,27 +20,48 @@ does not root the TV, flash firmware or replace the operating system.
 _Real 1920×1080 screenshot from a TCL 50T6C-UK Fire TV. No mock-up and no personal
 network identifiers._
 
-## The simplest setup: give this prompt to an AI coding agent
+## Install it with one prompt
 
-Use an agent that can run terminal commands on your computer, such as Codex,
-Claude Code, Gemini CLI or Cursor. Open the cloned repository in the agent, then
-paste this:
+You only do two things:
+
+1. Turn on ADB/Wireless debugging on the TV and find its IP address.
+2. Paste the prompt below into an AI that can control a terminal on your computer,
+   such as **Codex, Claude Code, Cursor, Gemini CLI, or ChatGPT/Claude with computer
+   and terminal tools**.
+
+Replace **only** `[TV IP ADDRESS]`. The AI downloads this project and does the
+computer work for you.
 
 ```text
-Set up my own TV with this repository. Read AGENTS.md and docs/AI-SETUP.md in full
-before running anything. My TV model is [MODEL], its operating system is [Fire OS,
-Android TV or Google TV], its local IP address is [IP], and my nearest city is
-[CITY, COUNTRY]. I want the Apple TV-style home screen shown in the README. Keep
-Live TV, every HDMI input, casting/AirPlay, the app store and all my installed apps.
-Do a read-only compatibility check first, explain exactly what will change, and ask
-before the first change. Do not root, flash, factory-reset or write to /system. If
-my TV is not safely supported, stop and tell me. When finished, verify the result
-and give me the exact restore command.
+I own the TV at [TV IP ADDRESS]. ADB/Wireless debugging is already enabled and the
+TV is on the same private network as this computer. Set it up using
+https://github.com/mahirm380/TV-Debloater.
+
+Do all of the computer work for me: download the repository, obtain Android ADB
+from the official source if it is missing, connect to the TV, detect its model and
+operating system, and read AGENTS.md and docs/AI-SETUP.md before changing anything.
+Do not ask me to clone anything, install tools, or type terminal commands myself.
+
+I want the Apple TV-style home screen shown in the repository. Keep Live TV, every
+HDMI input, casting/AirPlay, the official app store, and all installed user apps.
+Use safe defaults and leave remote-button remapping off unless I request it. Run a
+read-only compatibility check first, show me a short summary, and ask once before
+the first change. I will use the TV remote only to accept its debugging prompt or
+choose dumbtv home if the TV asks.
+
+Never root, flash, factory-reset, unlock the bootloader, write to /system, or guess
+model-specific package removals. If this TV is not safely supported, stop and
+explain why. When finished, configure the launcher, verify Home, apps, Live TV,
+HDMI inputs and the app store, then give me the restore command.
 ```
 
-That is enough for most people. The agent will ask whether you use Prime Video,
-Alexa, the DNS filter, YouTube and any branded remote buttons. It must not guess.
-The detailed agent workflow is in [docs/AI-SETUP.md](docs/AI-SETUP.md).
+That is the whole computer-side setup. The AI may ask your city for weather, ask
+what optional Fire OS cleanup you want, or tell you to approve the connection on
+the TV. A normal browser chat with no terminal/computer access can explain the
+process but cannot connect to a television; choose its coding/agent mode.
+
+See the illustrated [two-step setup guide](docs/INSTALL-GUIDE.md). The instructions
+the AI follows are in [docs/AI-SETUP.md](docs/AI-SETUP.md).
 
 ## What it will do to your TV
 
@@ -81,76 +102,20 @@ The dock scrolls one complete tile at a time, shows the selected app's name, and
 keeps the inputs in a separate aligned row. The greeting changes between morning,
 afternoon, evening and night.
 
-## Manual quick start
-
-### 1. Enable debugging
+## Before pasting the prompt
 
 **Fire TV:** Settings → My Fire TV (or Device & Software) → About → press OK on
-the device name seven times → Developer Options → ADB debugging on. Find the IP
-under About → Network. On some Fire TV Edition televisions it is under Settings →
-Network → the connected Wi-Fi network.
+the device name seven times → Developer Options → turn **ADB debugging** on. Find
+the IP under About → Network.
 
 **Android/Google TV:** Settings → System → About → press Build seven times →
-Developer options → USB/network debugging or Wireless debugging. Android 11 and
-later may show a pairing address and a separate connection address.
+Developer options → turn on **Wireless debugging** or **Network debugging**. Use
+the connection address shown there.
 
-Keep the TV and computer on the same private home network. Accept the **Allow USB
-debugging?** message on the TV and tick **Always allow**.
-
-### 2. Get the project and connect
-
-Install [Android platform-tools](https://developer.android.com/tools/releases/platform-tools)
-so the `adb` command is available, then:
-
-```sh
-git clone https://github.com/mahirm380/TV-Debloater.git
-cd TV-Debloater
-adb connect <TV-IP>:5555
-adb devices
-```
-
-The TV must appear with the word `device`, not `unauthorized` or `offline`. If the
-TV displays a six-digit Wireless debugging code, use `adb pair <PAIR-IP>:<PORT>`
-first and enter the code shown on the TV.
-
-### 3A. Install only the Apple TV-style home screen
-
-```sh
-./launcher/install.sh
-./launcher/configure.sh \
-  --weather-name "London" --latitude 51.5074 --longitude -0.1278 \
-  --timezone Europe/London --unit celsius
-```
-
-The repository includes a checksum-verified APK, so this route does not need
-Android Studio, Gradle or a Java setup. On standard Android/Google TV, select
-**dumbtv home → Always** if Android shows a Home app chooser.
-
-To use the exact remote-button layout from the TCL 50T6C-UK example—Netflix to
-Plex, Prime Video to the built-in AirPlay help screen, and Freely to Spotify—run:
-
-```sh
-./launcher/configure.sh --profile tcl-50t6c-uk
-```
-
-Do not use that profile on another remote unless its scan codes have been checked.
-Package-based interception may still work, but remote hardware codes differ.
-
-### 3B. Fire OS: launcher plus the privacy cleanup
-
-```sh
-./scripts/preflight.sh
-./scripts/configure.sh
-./scripts/all.sh
-./scripts/verify.sh
-```
-
-`preflight.sh` changes nothing. `configure.sh` asks what you use. `all.sh` confirms
-each stage and normally reboots the TV twice. `verify.sh` must finish with
-`all checks passed`.
-
-For screenshots of every result, troubleshooting and the exact recovery flow, read
-the [beginner installation guide](docs/INSTALL-GUIDE.md).
+Keep the computer and TV on the same private home network. Leave the remote nearby
+because the TV will ask you to approve the computer. The AI handles everything
+else. Advanced users can still find the individual commands in
+[launcher/README.md](launcher/README.md) and the other technical guides.
 
 ## Compatibility
 

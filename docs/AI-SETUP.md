@@ -5,27 +5,35 @@ on supported Fire OS devices, perform the optional privacy cleanup without
 improvising on a household television.
 
 A normal chat bot can explain these steps, but it cannot operate the computer or
-TV. Use a coding agent with terminal access to the folder containing this
-repository: Codex, Claude Code, Gemini CLI, Cursor, or an equivalent tool.
+TV. Use a coding agent with terminal access, such as Codex, Claude Code, Gemini
+CLI, Cursor, or an equivalent tool. The user does not need to download this
+repository first; the agent should do that work.
 
 ## Copy this prompt
 
-Replace the four bracketed values. Leave the optional sentence out if you do not
-want any remote buttons changed.
+The owner replaces only the TV IP address.
 
 ```text
-Set up my own TV with this repository. Read AGENTS.md and docs/AI-SETUP.md in full
-before running anything. My TV model is [MODEL], its operating system is [Fire OS,
-Android TV or Google TV], its local IP address is [IP], and my nearest city is
-[CITY, COUNTRY]. I want the Apple TV-style home screen shown in the README. Keep
-Live TV, every HDMI input, casting/AirPlay, the app store and all my installed apps.
-Do a read-only compatibility check first, explain exactly what will change, and ask
-before the first change. Do not root, flash, factory-reset or write to /system. If
-my TV is not safely supported, stop and tell me. When finished, verify the result
-and give me the exact restore command.
+I own the TV at [TV IP ADDRESS]. ADB/Wireless debugging is already enabled and the
+TV is on the same private network as this computer. Set it up using
+https://github.com/mahirm380/TV-Debloater.
 
-Optional: Ask me which branded remote buttons I want to remap. Do not assume that
-my remote uses the TCL 50T6C-UK scan codes.
+Do all of the computer work for me: download the repository, obtain Android ADB
+from the official source if it is missing, connect to the TV, detect its model and
+operating system, and read AGENTS.md and docs/AI-SETUP.md before changing anything.
+Do not ask me to clone anything, install tools, or type terminal commands myself.
+
+I want the Apple TV-style home screen shown in the repository. Keep Live TV, every
+HDMI input, casting/AirPlay, the official app store, and all installed user apps.
+Use safe defaults and leave remote-button remapping off unless I request it. Run a
+read-only compatibility check first, show me a short summary, and ask once before
+the first change. I will use the TV remote only to accept its debugging prompt or
+choose dumbtv home if the TV asks.
+
+Never root, flash, factory-reset, unlock the bootloader, write to /system, or guess
+model-specific package removals. If this TV is not safely supported, stop and
+explain why. When finished, configure the launcher, verify Home, apps, Live TV,
+HDMI inputs and the app store, then give me the restore command.
 ```
 
 The user should not paste an account password, Wi-Fi password, serial number or MAC
@@ -33,6 +41,22 @@ address into the prompt. A local IP address is needed for the session but must n
 be committed, posted in an issue or included in a screenshot.
 
 ## What the agent must do
+
+### 0. Prepare the computer without delegating work to the owner
+
+If the repository is not already open, clone
+`https://github.com/mahirm380/TV-Debloater` into a normal work folder and work from
+that copy. If Git is unavailable, download the repository's source archive instead.
+
+If `adb` is missing, download Android SDK Platform-Tools from Google's official
+developer site into a user-writable tool folder, verify the supplied checksum when
+one is published, and use its `adb` binary directly. Do not ask the owner to install
+Homebrew, Android Studio, a system package or a global dependency merely for this
+setup.
+
+Do not ask the owner to run commands. The owner only needs to approve prompts on
+the television, provide a pairing code if Android displays one, answer preferences
+that cannot be detected safely, and approve the proposed changes.
 
 ### 1. Read the safety rules
 
@@ -52,7 +76,7 @@ rules override convenience. In particular:
 Connect, wait for the owner to approve the prompt on the TV, then run:
 
 ```sh
-adb connect <TV-IP>:5555
+adb connect <TV-IP-OR-CONNECTION-ADDRESS>
 adb devices
 adb shell getprop ro.product.manufacturer
 adb shell getprop ro.product.model

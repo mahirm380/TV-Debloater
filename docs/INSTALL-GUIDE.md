@@ -1,284 +1,151 @@
-# Beginner installation guide
+# Two-step AI installation guide
 
-This guide takes you from a normal supported TV to the Apple TV-inspired home
-screen in the screenshots. Nothing requires a USB cable when the TV supports ADB
-over Wi-Fi. Allow 10–20 minutes and keep the TV and computer on the same private
-network.
+You do not need to understand ADB, Git, Android packages or terminal commands.
+You only need to enable debugging on the TV and give its IP address to an AI agent.
 
-## Before you begin
+The AI must be able to use the terminal on your computer. Good choices include
+Codex, Claude Code, Cursor, Gemini CLI, or ChatGPT/Claude running in a coding or
+computer-control mode. A normal browser chat without terminal access cannot reach
+a TV on your home network.
 
-You need:
+## Step 1: turn on TV debugging
 
-- a Fire OS 6–8 television/stick, or an Android/Google TV running Android 7.1 or
-  newer;
-- a Mac, Windows or Linux computer on the same network;
-- the TV remote in your hand for security prompts;
-- Android's official `adb` platform tool;
-- permission to manage the TV.
+Keep the TV and computer connected to the same private home Wi-Fi network.
 
-You do **not** need a USB drive, Ethernet cable, root access, an unlocked
-bootloader, Android Studio or a factory reset.
-
-If the TV runs Samsung Tizen, LG webOS, Roku, VIDAA or Philips Saphi, stop here.
-Those systems cannot install this Android launcher. See [OTHER-TVS.md](OTHER-TVS.md)
-for useful alternatives such as boot-to-HDMI and network DNS filtering.
-
-## Choose how much to change
-
-| Choice | Adds the launcher | Removes home-screen clutter | Disables telemetry packages | DNS filter | Reversible |
-|---|---:|---:|---:|---:|---:|
-| Launcher only | Yes | Yes, while using it | No | No | Yes |
-| Full Fire OS setup | Yes | Yes | Yes | Optional | Yes |
-
-Android/Google TV users should take the launcher-only route. The automated cleanup
-scripts intentionally refuse non-Fire devices because vendor package names differ.
-
-## Step 1: enable ADB on the TV
-
-### Fire OS
+### Fire TV or a television with Fire OS
 
 1. Open **Settings → My Fire TV** or **Device & Software → About**.
-2. Highlight the device name and press OK seven times.
+2. Highlight the TV/device name and press OK seven times.
 3. Open **Developer Options** and turn **ADB debugging** on.
-4. Find the address under **About → Network**. On some Fire TV Edition sets, open
-   **Settings → Network** and select the connected Wi-Fi network.
+4. Open **About → Network** and write down the IP address.
+
+On some Fire TV Edition televisions, the address is under **Settings → Network →
+your connected Wi-Fi network**.
 
 ### Android TV or Google TV
 
 1. Open **Settings → System → About**.
 2. Highlight **Build** and press OK seven times.
 3. Open **Developer options**.
-4. Turn on **USB debugging**, **Network debugging** or **Wireless debugging**—the
-   label varies by brand and Android version.
-5. Note the displayed connection address. Android 11+ may also show a separate
-   pairing address and six-digit code.
+4. Turn on **Wireless debugging** or **Network debugging**.
+5. Write down the connection address shown by the TV.
 
-Turn debugging off again when you are finished if you do not use it regularly.
+Newer Android TVs may show an address with a port, for example
+`192.168.x.x:12345`, plus a separate six-digit pairing code. Put the complete
+address in the prompt. The AI will tell you when it needs the pairing code.
 
-## Step 2: install ADB on the computer
+## Step 2: paste one prompt
 
-Download Android's official
-[SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools),
-extract it, and make the `adb` command available in Terminal/PowerShell. On macOS
-with Homebrew, `brew install android-platform-tools` is another option.
+Open your terminal-capable AI and paste the following. Replace only
+`[TV IP ADDRESS]` with the address displayed by the TV.
 
-Check it:
+```text
+I own the TV at [TV IP ADDRESS]. ADB/Wireless debugging is already enabled and the
+TV is on the same private network as this computer. Set it up using
+https://github.com/mahirm380/TV-Debloater.
 
-```sh
-adb version
+Do all of the computer work for me: download the repository, obtain Android ADB
+from the official source if it is missing, connect to the TV, detect its model and
+operating system, and read AGENTS.md and docs/AI-SETUP.md before changing anything.
+Do not ask me to clone anything, install tools, or type terminal commands myself.
+
+I want the Apple TV-style home screen shown in the repository. Keep Live TV, every
+HDMI input, casting/AirPlay, the official app store, and all installed user apps.
+Use safe defaults and leave remote-button remapping off unless I request it. Run a
+read-only compatibility check first, show me a short summary, and ask once before
+the first change. I will use the TV remote only to accept its debugging prompt or
+choose dumbtv home if the TV asks.
+
+Never root, flash, factory-reset, unlock the bootloader, write to /system, or guess
+model-specific package removals. If this TV is not safely supported, stop and
+explain why. When finished, configure the launcher, verify Home, apps, Live TV,
+HDMI inputs and the app store, then give me the restore command.
 ```
 
-## Step 3: download this project
+That is all you need to type.
 
-```sh
-git clone https://github.com/mahirm380/TV-Debloater.git
-cd TV-Debloater
-```
+## What happens next
 
-If you prefer an AI to handle the remaining steps, open this folder in the coding
-agent and paste the prompt from [AI-SETUP.md](AI-SETUP.md). The rest of this guide
-is the manual route.
+The AI will:
 
-## Step 4: connect to the TV
+1. Download this repository and the official Android connection tool if needed.
+2. Connect to the single IP address you supplied.
+3. Detect the TV model, Android version and whether it runs Fire OS.
+4. Stop safely if the platform cannot run the launcher.
+5. Show a short read-only report and ask for one approval before changing the TV.
+6. Install the checksum-verified launcher and configure the normal Home action.
+7. Keep Live TV, HDMI, casting/AirPlay, the official store and user apps.
+8. Configure weather after asking for your city, if you want it.
+9. Test the result and give you the exact recovery command.
 
-For most Fire TVs and older Android TVs:
+You may need to use the TV remote to:
 
-```sh
-adb connect <TV-IP>:5555
-adb devices
-```
+- accept **Allow USB debugging?** and select **Always allow**;
+- read a six-digit pairing code to the AI on newer Android TVs;
+- choose **dumbtv home → Always** if Android displays a Home-app chooser;
+- answer whether you want optional weather, Fire OS privacy cleanup or remote
+  button changes.
 
-For a TV showing a pairing code:
+You should not need to download files, install ADB, clone the project or enter
+commands yourself.
 
-```sh
-adb pair <PAIR-IP>:<PAIR-PORT>
-adb connect <CONNECT-IP>:<CONNECT-PORT>
-adb devices
-```
+## What the finished TV looks like
 
-Replace the placeholders with the values shown on the TV. Approve **Allow USB
-debugging?** with the remote and tick **Always allow from this computer**. Continue
-only when `adb devices` shows exactly one intended TV ending in `device`.
+These are direct 1920×1080 screenshots from a TCL 50T6C-UK Fire TV, not mock-ups.
 
-`unauthorized` means the TV is waiting for approval. `offline` usually means the
-TV needs a moment, or debugging should be toggled off and on. Do not keep retrying
-while a prompt is waiting on the television.
-
-## Step 5: install the launcher
-
-```sh
-./launcher/install.sh
-```
-
-The installer verifies the APK checksum before installing it. It then:
-
-- uses the accessibility Home hand-off tested on Fire OS 7 and 8;
-- uses the usage-access keeper tested on Fire OS 6; or
-- requests the normal Android Home role on Android/Google TV.
-
-It never disables a stock launcher on Android/Google TV. If Android shows a Home
-app chooser, select **dumbtv home** and **Always**. If the vendor does not permit a
-replacement Home app, open it from Apps instead.
-
-## Step 6: set your weather
-
-Ask an AI or a map service for your city's latitude, longitude and IANA timezone,
-then run:
-
-```sh
-./launcher/configure.sh \
-  --weather-name "Your city" \
-  --latitude 00.0000 \
-  --longitude 00.0000 \
-  --timezone Area/City \
-  --unit celsius
-```
-
-Use `--unit fahrenheit` where preferred, or hide weather:
-
-```sh
-./launcher/configure.sh --weather-off
-```
-
-Weather is refreshed about every 30 minutes and the last reading is cached for
-offline starts. The launcher sends only the configured coordinates and ordinary
-weather request fields to Open-Meteo. It has no account or analytics service.
-
-## Step 7: arrange the screen with the remote
-
-Open **Options** in the top-right corner.
-
-- **Accent color:** colour of the focus and dock outline.
-- **Tile size:** small, medium or large.
-- **Inputs row:** show or hide hardware inputs.
-- **Open inputs with:** automatic is safest; it uses the TV's input app when one is
-  unambiguous and the built-in input view otherwise.
-- **Background:** solid, built-in wallpaper or adaptive colour.
-- **Wallpaper:** Aurora Bay, Alpine Aurora, Golden Coast, or your photos.
-- **Wallpaper motion:** still or slow live pan.
-- **Image dim:** darkens a bright photo behind text.
-- **Apps/Inputs on home screen:** choose what appears without uninstalling it.
-
-On a tile:
-
-| Remote action | Result |
-|---|---|
-| OK | Open app or input |
-| Hold OK, or Menu | Move, rename, hide or open app info |
-| Left/Right in Move mode | Reorder the tile |
-| Back on Home | Jump to the first tile |
-| Home from an app | Return to the launcher |
-
-## Optional: remote shortcut buttons
-
-Mappings are off by default. On the exact TCL 50T6C-UK / compatible remote used
-for the screenshots:
-
-```sh
-./launcher/configure.sh --profile tcl-50t6c-uk
-```
-
-This maps Netflix→Plex, Prime Video→AirPlay help, and Freely→Spotify. Check that
-Plex and Spotify are installed first. Other remotes can use different scan codes,
-even when the button labels match, so use an AI agent to inspect and configure the
-specific remote instead of copying this profile.
-
-## Optional: full Fire OS cleanup
-
-Read the proposed changes first:
-
-```sh
-./scripts/preflight.sh
-./scripts/debloat.sh --dry-run
-```
-
-Then answer the interactive questions and run the guarded sequence:
-
-```sh
-./scripts/configure.sh
-./scripts/all.sh
-./scripts/verify.sh
-```
-
-The defaults keep Prime Video, Alexa, every user app and YouTube. Nothing is
-removed unless you explicitly name it. DNS filtering is optional. A successful
-finish says `all checks passed`.
-
-## The real result on a TCL 50T6C-UK
-
-These are direct 1920×1080 captures from the television, not design mock-ups.
-
-### Home
+### Home screen
 
 ![Aurora Bay home on the TCL 50T6C-UK](assets/screens/real-tv/tcl-50t6c-home.png)
 
-The top-left block contains time, date, local weather and a greeting that changes
-through the day. Apps and inputs sit at the bottom so wallpaper remains visible.
+The launcher places apps and inputs near the bottom, keeps complete tiles visible,
+and shows the selected app name. Time, date, weather and the time-aware greeting
+remain easy to read without covering the wallpaper.
 
-### Options
+### Options and wallpapers
 
-![Options on the TCL 50T6C-UK](assets/screens/real-tv/tcl-50t6c-options.png)
-
-All visual changes are remote-friendly and saved immediately.
-
-### Another included wallpaper
-
-![Alpine Aurora on the TCL 50T6C-UK](assets/screens/real-tv/tcl-50t6c-alpine.png)
-
-The built-in wallpapers can be still or move with a very slow pan. System reduced
-motion/disabled animation settings are respected.
-
-## Verify before declaring success
-
-Test these in order:
-
-1. Press Home from two different apps.
-2. Reboot and press Home again.
-3. Open an app, the official app store and Live TV.
-4. Open every HDMI input, then return with Back/Home.
-5. Test casting/AirPlay if it existed before.
-6. Scroll beyond the first six apps and confirm no partial tile remains at an edge.
-7. Confirm the city and temperature unit.
-8. Test only the shortcut buttons you intentionally configured.
-9. On a full Fire OS setup, run `./scripts/verify.sh`.
-
-If a core feature fails, undo before experimenting with system packages.
-
-## Undo and recover
-
-Give Home back to the stock launcher:
-
-```sh
-./launcher/install.sh --undo
-```
-
-On Android/Google TV, choose the original launcher if Android shows a picker. Once
-the original Home works, the custom app can be removed:
-
-```sh
-adb uninstall tv.dumbtv.home
-```
-
-Undo the full Fire OS cleanup:
-
-```sh
-./scripts/restore.sh -y
-```
-
-If the TV is usable but ADB will not reconnect, toggle ADB debugging off and on in
-Developer Options. Never factory-reset merely to fix this launcher.
-
-## Troubleshooting
-
-| Symptom | What to do |
+| Options | Alpine Aurora |
 |---|---|
-| `adb devices` says `unauthorized` | Approve the prompt on the TV |
-| More than one device is listed | Set `ADB_SERIAL` to the intended TV; never guess |
-| Stock Home returns on Fire OS | Run `./launcher/install.sh` again; an update may have reset the hook |
-| Android/Google TV ignores the new Home | Select it in the Home chooser; if the vendor blocks it, use it as a normal app |
-| Weather says unavailable | Check TV internet access and the coordinates; cached data remains visible when available |
-| App is missing from the dock | Options → Apps on home screen |
-| Input is missing | Confirm the TV exposes it and Options → Inputs on home screen |
-| An optional mapping opens nothing | Install/check the destination app or remove the mapping with `none` |
+| ![Options on the TCL 50T6C-UK](assets/screens/real-tv/tcl-50t6c-options.png) | ![Alpine Aurora wallpaper](assets/screens/real-tv/tcl-50t6c-alpine.png) |
 
-More model-specific fixes are in [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+Options lets the owner change the accent, tile size, visible apps and inputs,
+wallpaper, motion, dimming and rotation using only the TV remote.
+
+## Supported televisions
+
+| TV operating system | What the AI can do |
+|---|---|
+| Fire OS 6, 7 or 8 | Install the launcher; offer the reviewed reversible privacy cleanup |
+| Android TV / Google TV 7.1+ | Install the launcher and request the normal Home role |
+| Samsung Tizen, LG webOS, Roku, VIDAA or Saphi | Stop safely; these systems cannot run this Android APK |
+
+Some Android brands do not permit a replacement Home app. The AI will leave the
+stock launcher enabled and explain the limitation instead of forcing an unsafe
+change.
+
+## If the AI starts giving you commands
+
+Paste this reply:
+
+```text
+Please run those commands yourself using your terminal tools. I will only approve
+the prompt shown on the television and answer questions that cannot be detected.
+```
+
+If the AI has no terminal or computer tools, switch to Codex, Claude Code or
+another coding-agent mode. A text-only chat cannot perform the installation.
+
+## Undo with one prompt
+
+Open the same AI in the project and paste:
+
+```text
+Restore my TV to its original home screen using this repository's documented safe
+restore process. Connect only to [TV IP ADDRESS], inspect what this project changed,
+show me the restore plan, ask once for approval, perform it, and verify the stock
+Home screen works. Do not factory-reset, root, flash, or remove my user apps.
+```
+
+The individual advanced commands remain documented in
+[the launcher reference](../launcher/README.md) and
+[the troubleshooting guide](TROUBLESHOOTING.md), but ordinary users should not
+need them.
