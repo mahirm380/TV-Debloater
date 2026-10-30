@@ -34,11 +34,13 @@ final class Config {
     static final String FILE = "home.conf";
 
     static final class Choice {
-        final String key, title;
-        final String[] values, names;
+        final String key;
+        final int title;
+        final String[] values;
+        final int[] names;
         final String fallback;
 
-        Choice(String key, String title, String fallback, String[] values, String[] names) {
+        Choice(String key, int title, String fallback, String[] values, int[] names) {
             this.key = key;
             this.title = title;
             this.fallback = fallback;
@@ -46,43 +48,49 @@ final class Config {
             this.names = names;
         }
 
-        String name(String value) {
+        String name(Context context, String value) {
             int i = Arrays.asList(values).indexOf(value);
-            return i < 0 ? value : names[i];
+            return i < 0 ? value : context.getString(names[i]);
         }
     }
 
-    static final Choice ACCENT = new Choice("accent", "Accent color", "white",
+    static final Choice ACCENT = new Choice("accent", R.string.accent_color, "white",
             new String[] {"white", "blue", "cyan", "green", "amber", "red", "pink", "violet"},
-            new String[] {"White", "Blue", "Cyan", "Green", "Amber", "Red", "Pink", "Violet"});
-    static final Choice TILES = new Choice("tiles", "Tile size", "large",
+            new int[] {R.string.color_white, R.string.color_blue, R.string.color_cyan,
+                    R.string.color_green, R.string.color_amber, R.string.color_red,
+                    R.string.color_pink, R.string.color_violet});
+    static final Choice TILES = new Choice("tiles", R.string.tile_size, "large",
             new String[] {"small", "medium", "large"},
-            new String[] {"Small", "Medium", "Large"});
-    static final Choice CLOCK = new Choice("clock", "Clock", "12h",
+            new int[] {R.string.small, R.string.medium, R.string.large});
+    static final Choice CLOCK = new Choice("clock", R.string.clock, "12h",
             new String[] {"auto", "24h", "12h"},
-            new String[] {"System", "24-hour", "12-hour"});
-    static final Choice INPUTS = new Choice("inputs", "Inputs row", "on",
+            new int[] {R.string.system, R.string.hour_24, R.string.hour_12});
+    static final Choice INPUTS = new Choice("inputs", R.string.inputs_row, "on",
             new String[] {"on", "off"},
-            new String[] {"Shown", "Hidden"});
-    static final Choice SWITCH = new Choice("switch", "Open inputs with", "auto",
+            new int[] {R.string.shown, R.string.hidden});
+    static final Choice SWITCH = new Choice("switch", R.string.open_inputs_with, "auto",
             new String[] {"auto", "tv", "home"},
-            new String[] {"Automatic", "The TV's app", "dumbtv home"});
-    static final Choice BACKGROUND = new Choice("background", "Background", "image",
+            new int[] {R.string.automatic, R.string.tv_app, R.string.dumbtv_home});
+    static final Choice BACKGROUND = new Choice("background", R.string.background, "image",
             new String[] {"black", "graphite", "midnight", "image", "adaptive", "adaptive-tint"},
-            new String[] {"Black", "Graphite", "Midnight", "Wallpaper", "Adaptive solid", "Adaptive wallpaper"});
-    static final Choice WALLPAPER = new Choice("wallpaper", "Wallpaper", "aurora",
+            new int[] {R.string.black, R.string.graphite, R.string.midnight,
+                    R.string.wallpaper, R.string.adaptive_solid, R.string.adaptive_wallpaper});
+    static final Choice WALLPAPER = new Choice("wallpaper", R.string.wallpaper, "aurora",
             new String[] {"aurora", "alpine", "coast", "custom"},
-            new String[] {"Aurora Bay", "Alpine Aurora", "Golden Coast", "My photos"});
-    static final Choice MOTION = new Choice("motion", "Wallpaper motion", "still",
+            new int[] {R.string.aurora_bay, R.string.alpine_aurora,
+                    R.string.golden_coast, R.string.my_photos});
+    static final Choice MOTION = new Choice("motion", R.string.wallpaper_motion, "still",
             new String[] {"still", "live"},
-            new String[] {"Still", "Live slow pan"});
-    static final Choice DIM = new Choice("dim", "Image dim", "20",
+            new int[] {R.string.still, R.string.live_slow_pan});
+    static final Choice DIM = new Choice("dim", R.string.image_dim, "20",
             new String[] {"0", "20", "40", "60", "80"},
-            new String[] {"0%", "20%", "40%", "60%", "80%"});
+            new int[] {R.string.dim_0, R.string.dim_20, R.string.dim_40,
+                    R.string.dim_60, R.string.dim_80});
 
-    static final Choice ROTATE = new Choice("rotate", "Wallpaper rotation", "off",
+    static final Choice ROTATE = new Choice("rotate", R.string.wallpaper_rotation, "off",
             new String[] {"off", "visit", "hourly", "daily", "daytime"},
-            new String[] {"Off", "Every return home", "Every hour", "Every day", "By time of day"});
+            new int[] {R.string.off, R.string.every_return_home, R.string.every_hour,
+                    R.string.every_day, R.string.by_time_of_day});
 
     static final Choice[] CHOICES = {ACCENT, TILES, INPUTS, SWITCH, BACKGROUND, WALLPAPER,
             MOTION, DIM, ROTATE};

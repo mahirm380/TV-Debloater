@@ -518,8 +518,8 @@ public final class Home extends Activity {
         actions.setClipChildren(false);
         actions.setClipToPadding(false);
         actions.setGravity(Gravity.RIGHT | Gravity.TOP);
-        actions.addView(chip("Options", v -> startActivity(new Intent(this, Options.class))));
-        actions.addView(chip("Settings", v -> openSettings()));
+        actions.addView(chip(R.string.options, v -> startActivity(new Intent(this, Options.class))));
+        actions.addView(chip(R.string.settings, v -> openSettings()));
         FrameLayout.LayoutParams actionParams = new FrameLayout.LayoutParams(WRAP, WRAP,
                 Gravity.RIGHT | Gravity.TOP);
         actionParams.rightMargin = dp(8);
@@ -565,7 +565,7 @@ public final class Home extends Activity {
         return best;
     }
 
-    private TextView chip(String label, View.OnClickListener click) {
+    private TextView chip(int label, View.OnClickListener click) {
         TextView v = Ui.text(this, 14, Ui.TEXT, Ui.MEDIUM);
         v.setText(label);
         v.setGravity(Gravity.CENTER);
@@ -786,8 +786,9 @@ public final class Home extends Activity {
         Locale locale = Locale.getDefault();
         date.setText(DateFormat.format(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), now));
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        greeting.setText(hour < 5 ? "Good night" : hour < 12 ? "Good morning"
-                : hour < 18 ? "Good afternoon" : hour < 22 ? "Good evening" : "Good night");
+        greeting.setText(hour < 5 ? R.string.good_night : hour < 12 ? R.string.good_morning
+                : hour < 18 ? R.string.good_afternoon : hour < 22 ? R.string.good_evening
+                : R.string.good_night);
         weather();
         // hourly and time-of-day rotations change while the screen stays open; a no-op otherwise
         background();
@@ -822,7 +823,8 @@ public final class Home extends Activity {
                 if (isDestroyed()) return;
                 if (result != null) showWeather(result);
                 else if (Weather.cached(this, cfg) == null) {
-                    weatherDetail.setText(" " + Weather.place(cfg) + " · unavailable");
+                    weatherDetail.setText(" " + Weather.place(cfg) + " · "
+                            + getString(R.string.weather_unavailable));
                 }
             });
         });
@@ -830,7 +832,7 @@ public final class Home extends Activity {
 
     private void showWeather(Weather.Reading reading) {
         weatherTemp.setText(" · " + Math.round(reading.temperature) + Weather.unitSymbol(cfg));
-        weatherDetail.setText(" " + Weather.place(cfg) + " · " + reading.condition());
+        weatherDetail.setText(" " + Weather.place(cfg) + " · " + reading.condition(this));
     }
 
     private void background() {
@@ -996,7 +998,7 @@ public final class Home extends Activity {
         try {
             startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
         } catch (ActivityNotFoundException | SecurityException e) {
-            Toast.makeText(this, "Could not open that", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.could_not_open, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1005,9 +1007,13 @@ public final class Home extends Activity {
         boolean uninstallable = app && uninstallable(t.item);
         String[] actions = app
                 ? uninstallable
-                        ? new String[] {"Move", "Rename", "Hide", "Uninstall", "App info"}
-                        : new String[] {"Move", "Rename", "Hide", "App info"}
-                : new String[] {"Move", "Rename", "Hide"};
+                        ? new String[] {getString(R.string.move), getString(R.string.rename),
+                                getString(R.string.hide), getString(R.string.uninstall),
+                                getString(R.string.app_info)}
+                        : new String[] {getString(R.string.move), getString(R.string.rename),
+                                getString(R.string.hide), getString(R.string.app_info)}
+                : new String[] {getString(R.string.move), getString(R.string.rename),
+                        getString(R.string.hide)};
         new AlertDialog.Builder(this, Ui.DIALOG)
                 .setTitle(Catalog.label(cfg, t.item))
                 .setItems(actions, (d, which) -> {
@@ -1023,7 +1029,7 @@ public final class Home extends Activity {
                         case 2:
                             Catalog.setShown(cfg, t.kind, t.item, false);
                             render(app ? apps : inputs);
-                            Toast.makeText(this, "Hidden. Bring it back from Options.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, R.string.hidden_message, Toast.LENGTH_SHORT).show();
                             break;
                         default:
                             if (uninstallable && which == 3) confirmUninstall(t.item);
@@ -1044,11 +1050,10 @@ public final class Home extends Activity {
     private void confirmUninstall(Item item) {
         CharSequence label = Catalog.label(cfg, item);
         new AlertDialog.Builder(this, Ui.DIALOG)
-                .setTitle("Uninstall " + label + "?")
-                .setMessage("This removes the app and its data from this TV. "
-                        + "The TV will ask you to confirm once more.")
-                .setPositiveButton("Continue", (dialog, which) -> uninstall(item.id))
-                .setNegativeButton("Cancel", null)
+                .setTitle(getString(R.string.uninstall_title, label))
+                .setMessage(R.string.uninstall_message)
+                .setPositiveButton(R.string.continue_label, (dialog, which) -> uninstall(item.id))
+                .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
@@ -1056,14 +1061,14 @@ public final class Home extends Activity {
         Intent request = new Intent(Intent.ACTION_DELETE,
                 Uri.fromParts("package", packageName, null));
         if (request.resolveActivity(getPackageManager()) == null) {
-            Toast.makeText(this, "This TV does not allow that app to be uninstalled.",
+            Toast.makeText(this, R.string.uninstall_denied,
                     Toast.LENGTH_LONG).show();
             return;
         }
         try {
             startActivity(request);
         } catch (ActivityNotFoundException | SecurityException e) {
-            Toast.makeText(this, "This TV does not allow that app to be uninstalled.",
+            Toast.makeText(this, R.string.uninstall_denied,
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -1083,18 +1088,18 @@ public final class Home extends Activity {
         box.addView(field);
         String key = "name." + t.item.id;
         AlertDialog d = new AlertDialog.Builder(this, Ui.DIALOG)
-                .setTitle("Rename")
+                .setTitle(R.string.rename)
                 .setView(box)
-                .setPositiveButton("Save", (dialog, w) -> {
+                .setPositiveButton(R.string.save, (dialog, w) -> {
                     String name = field.getText().toString().trim();
                     cfg.set(key, name.equals(t.item.label.toString()) ? null : name);
                     apply();
                 })
-                .setNeutralButton("Original", (dialog, w) -> {
+                .setNeutralButton(R.string.original, (dialog, w) -> {
                     cfg.set(key, null);
                     apply();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
         d.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         d.show();

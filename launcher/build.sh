@@ -68,6 +68,7 @@ mkdir -p "$WORK/gen" "$WORK/classes" build
   --min-sdk-version "$MIN_SDK" --target-sdk-version 28 \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
   --java "$WORK/gen" -o "$WORK/app.apk"
+cp "$WORK/gen/tv/dumbtv/home/R.java" build/R.java
 
 find src "$WORK/gen" -name '*.java' > "$WORK/sources.txt"
 "$JAVA_HOME/bin/javac" --release 8 -Xlint:all -Xlint:-options -Xlint:-deprecation -Werror -encoding UTF-8 \
