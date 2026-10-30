@@ -24,9 +24,9 @@ public final class FocusColorTest {
         check((FocusColor.tint(color) >>> 24) == 61, "tint is 24 percent opaque");
         check((FocusColor.tint(color) & 0xFFFFFF) == (color & 0xFFFFFF), "tint keeps color");
         check("image".equals(Config.BACKGROUND.fallback), "wallpaper is the default background");
-        check("Adaptive wallpaper".equals(Config.BACKGROUND.name("adaptive-tint")),
+        check(Config.BACKGROUND.names[5] == R.string.adaptive_wallpaper,
                 "tint is an Options choice");
-        check("Amber".equals(Config.ACCENT.name("amber")), "amber accent unchanged");
+        check(Config.ACCENT.names[4] == R.string.color_amber, "amber accent unchanged");
         System.out.println("FocusColorTest passed");
     }
 }

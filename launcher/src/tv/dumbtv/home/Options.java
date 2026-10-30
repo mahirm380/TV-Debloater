@@ -43,21 +43,21 @@ public final class Options extends Activity {
         scroll.addView(list);
 
         TextView title = Ui.text(this, 30, Ui.TEXT, Ui.LIGHT);
-        title.setText("Options");
+        title.setText(R.string.options);
         title.setPadding(dp(16), 0, 0, dp(20));
         list.addView(title);
 
         for (Config.Choice c : Config.CHOICES) list.addView(choice(c));
-        list.addView(action("Next custom photo", () -> {
+        list.addView(action(R.string.next_custom_photo, () -> {
             cfg.nextWallpaper();
             refresh();
         }));
         list.addView(gap());
-        list.addView(action("Apps on home screen", () -> pick(Catalog.APPS)));
-        list.addView(action("Inputs on home screen", () -> pick(Catalog.INPUTS)));
-        list.addView(action("Reset order, names and hidden tiles", this::reset));
+        list.addView(action(R.string.apps_on_home, () -> pick(Catalog.APPS)));
+        list.addView(action(R.string.inputs_on_home, () -> pick(Catalog.INPUTS)));
+        list.addView(action(R.string.reset_order_names_hidden, this::reset));
         if (getPackageManager().getLaunchIntentForPackage(Guard.AMAZON) != null) {
-            list.addView(action("Open Amazon's home screen", () -> {
+            list.addView(action(R.string.open_amazon_home, () -> {
                 Guard.amazon(this);
                 finish();
             }));
@@ -66,12 +66,7 @@ public final class Options extends Activity {
         TextView about = Ui.text(this, 13, Ui.FAINT, Ui.MEDIUM);
         about.setLineSpacing(0, 1.4f);
         about.setPadding(dp(16), dp(28), 0, 0);
-        about.setText("Choose one of the built-in scenes under Wallpaper, then set Wallpaper motion to Still or Live slow pan."
-                + "\nFor your own photo: name it wallpaper.jpg (or .png) and put it in " + cfg.dir
-                + "\nFor several photos: put them in " + Config.WALLPAPERS + "/ and choose a rotation"
-                + "\nThen select Wallpaper › My photos. No permission is needed"
-                + "\nNetwork access is used only for the weather readout. No tracking, ads or accounts."
-                + "\nWeather location and optional remote-button shortcuts can be set with launcher/configure.sh.");
+        about.setText(getString(R.string.options_about, cfg.dir, Config.WALLPAPERS));
         list.addView(about);
 
         setContentView(scroll);
@@ -91,7 +86,7 @@ public final class Options extends Activity {
 
     private View choice(Config.Choice c) {
         LinearLayout row = row();
-        TextView name = label(c.title);
+        TextView name = label(getString(c.title));
         TextView value = Ui.text(this, 16, Ui.MUTED, Ui.MEDIUM);
         value.setGravity(Gravity.END);
         row.addView(name, new LinearLayout.LayoutParams(0, WRAP, 1f));
@@ -105,7 +100,7 @@ public final class Options extends Activity {
         });
         Runnable show = () -> {
             boolean focused = row.isFocused();
-            String text = c.name(cfg.get(c));
+            String text = c.name(this, cfg.get(c));
             if (c == Config.ACCENT) {
                 SpannableString s = new SpannableString("●  " + text);
                 s.setSpan(new ForegroundColorSpan(cfg.accent()), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -139,9 +134,9 @@ public final class Options extends Activity {
         return true;
     }
 
-    private View action(String text, Runnable run) {
+    private View action(int text, Runnable run) {
         LinearLayout row = row();
-        row.addView(label(text), new LinearLayout.LayoutParams(0, WRAP, 1f));
+        row.addView(label(getString(text)), new LinearLayout.LayoutParams(0, WRAP, 1f));
         TextView chevron = Ui.text(this, 16, Ui.MUTED, Ui.MEDIUM);
         chevron.setText("›");
         row.addView(chevron);
@@ -193,19 +188,19 @@ public final class Options extends Activity {
             on[i] = Catalog.shown(cfg, kind, items.get(i));
         }
         new AlertDialog.Builder(this, Ui.DIALOG)
-                .setTitle(Catalog.APPS.equals(kind) ? "Apps on home screen" : "Inputs on home screen")
+                .setTitle(Catalog.APPS.equals(kind) ? R.string.apps_on_home : R.string.inputs_on_home)
                 .setMultiChoiceItems(names, on, (d, which, checked) ->
                         Catalog.setShown(cfg, kind, items.get(which), checked))
-                .setPositiveButton("Done", null)
+                .setPositiveButton(R.string.done, null)
                 .show();
     }
 
     private void reset() {
         new AlertDialog.Builder(this, Ui.DIALOG)
-                .setTitle("Reset the home screen layout?")
-                .setMessage("Order, names and hidden tiles go back to default. Colors and sizes stay.")
-                .setPositiveButton("Reset", (d, w) -> cfg.removePrefix("name.", "apps.", "inputs."))
-                .setNegativeButton("Cancel", null)
+                .setTitle(R.string.reset_title)
+                .setMessage(R.string.reset_message)
+                .setPositiveButton(R.string.reset, (d, w) -> cfg.removePrefix("name.", "apps.", "inputs."))
+                .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 

@@ -16,7 +16,7 @@ public final class AirPlay extends Activity {
         super.onCreate(state);
 
         String name = Settings.Global.getString(getContentResolver(), "device_name");
-        if (name == null || name.trim().isEmpty()) name = "this TV";
+        if (name == null || name.trim().isEmpty()) name = getString(R.string.this_tv);
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
@@ -24,12 +24,9 @@ public final class AirPlay extends Activity {
         page.setPadding(Ui.dp(this, 96), Ui.dp(this, 48), Ui.dp(this, 96), Ui.dp(this, 48));
         page.setBackgroundColor(Config.get(this).background());
 
-        TextView title = text("AirPlay is ready", 42, Color.WHITE);
-        TextView steps = text("On your iPhone, iPad or Mac:\n\n"
-                + "1. Open Control Centre.\n"
-                + "2. Choose Screen Mirroring.\n"
-                + "3. Select " + name + ".", 25, 0xFFE6E6E6);
-        TextView hint = text("Press Back to return to DumbTV", 18, 0xFFAAAAAA);
+        TextView title = text(getString(R.string.airplay_ready), 42, Color.WHITE);
+        TextView steps = text(getString(R.string.airplay_steps, name), 25, 0xFFE6E6E6);
+        TextView hint = text(getString(R.string.airplay_back), 18, 0xFFAAAAAA);
 
         page.addView(title, params(0, Ui.dp(this, 36)));
         page.addView(steps, params(1, 0));
